@@ -20,6 +20,26 @@ If you are using SNMP version 3 , you have to obtain, build and add the [PyCrypt
 
 The simplest way is to build pycrypto and drop the `Crypto` directory in `$SPLUNK_HOME/etc/apps/snmpmod/bin`. I don't recommend installing the pycrypto package to the Splunk Python runtime's site-packages, this could have unforeseen side effects.
 
+### Building and installing PyCrypto
+
+The pycrypto module is not bundled with the core release, because :
+
+* you need to build it for each separate platform
+* US export controls for encrypted software
+
+
+So, here are a few instructions for building and installing pycrypto yourself :
+
+* Download the pycrypto package from [https://www.dlitz.net/software/pycrypto/](https://www.dlitz.net/software/pycrypto/)
+* Then run these 3 commands (note : you will need to use a System python 2.7 runtime , not the Splunk python runtime)
+
+		python setup.py build
+		python setup.py install
+		python setup.py test
+
+* Browse to where the Crypto module was installed to ie: `/usr/local/lib/python2.7/dist-packages/Crypto`
+* Copy the `Crypto` directory to `$SPLUNK_HOME/etc/apps/snmpmod/bin`
+
 snmp Stanza
 ===========
 
