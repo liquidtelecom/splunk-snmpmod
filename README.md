@@ -11,6 +11,7 @@ Deployment
 
     cd $SPLUNK_HOME/etc/apps
     git clone https://github.com/oxo42/snmpmod.git
+    cd snmpmod
     mkdir local
 	vim local/inputs.conf
 
