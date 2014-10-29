@@ -77,3 +77,23 @@ Response Handlers
 destination, host and /etc/hosts
 --------------------------------
 Currently, all response handlers set the Splunk host to the value of destination.  If you don't have DNS (bad sysadmin!) add an entry to /etc/hosts.  I'd be very happy to take a pull request that will look at a `host` config option and override `destination` with that value.
+
+SNMP Interface Search Query
+===========================
+
+I strongly recommend you [create a search macro](http://docs.splunk.com/Documentation/Splunk/latest/Search/Usesearchmacros) `snmpif_parse` that uses `streamstats` to calculate the bits per second from the raw `snmpif` data. My macro is:
+
+    stats first(*) as * by _time host ifIndex 
+    | streamstats window=2 global=false current=true range(if*Octets) as delta*, range(_time) as secs by host, ifIndex 
+    | where secs>0 
+    | eval bpsIn=coalesce(deltaHCIn, deltaIn)*8/secs 
+    | eval bpsOut=coalesce(deltaHCOut, deltaOut)*8/secs 
+    | eval mbpsIn=bpsIn/1000000 | eval mbpsOut=bpsOut/1000000
+
+Then to call it and display the results as a graph:
+
+    index=snmpif host=foo ifIndex=17 | `snmpif_parse` | timechart bins=500 avg(mbpsIn) as "Mbps IN", avg(mbpsOut) as "Mbps OUT"
+
+And calculate 95th percentile figures
+
+    index=snmpif host=foo ifIndex=17 | `snmpif_parse` | stats perc95(mbpsIn) as "IN", perc95(mbpsOut) as "OUT"
