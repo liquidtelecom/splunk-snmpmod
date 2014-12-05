@@ -98,3 +98,21 @@ Then to call it and display the results as a graph:
 And calculate 95th percentile figures
 
     index=snmpif host=foo ifIndex=17 | `snmpif_parse` | stats perc95(mbpsIn) as "IN", perc95(mbpsOut) as "OUT"
+
+Summary Collection
+==================
+
+The search term shown above is quite expensive.  I am running the query above and collecting the data into a new index.
+
+    [search index=network sourcetype=snmp_traffic | stats first(_time) as earliest] index=liquid_network sourcetype="snmpif" 
+    | stats first(*) as * by _time host ifIndex 
+    | streamstats window=2 global=false current=true range(if*Octets) as delta*, range(_time) as secs by host, ifIndex 
+    | where secs>0 
+    | eval bpsIn=coalesce(deltaHCIn, deltaIn)*8/secs 
+    | eval bpsOut=coalesce(deltaHCOut, deltaOut)*8/secs 
+    | eval mbpsIn=bpsIn/1000000 
+    | eval mbpsOut=bpsOut/1000000 
+    | fields _time host ifIndex bpsIn bpsOut ifAdminStatus ifDescr ifMtu ifOperStatus ifPhysAddress ifSpecific ifSpeed ifType mbpsIn mbpsOut 
+    | collect index=network sourcetype=snmp_traffic
+
+There is a trick there of using the most recent snmp_traffic event to start the next round of collections.  I run this search every 30 minutes.
