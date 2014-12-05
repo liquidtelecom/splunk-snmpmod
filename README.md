@@ -104,7 +104,7 @@ Summary Collection
 
 The search term shown above is quite expensive.  I am running the query above and collecting the data into a new index.
 
-    [search index=network sourcetype=snmp_traffic | stats first(_time) as earliest] index=liquid_network sourcetype="snmpif" 
+    [search index=network sourcetype=snmp_traffic | stats first(_time) as earliest] index=network sourcetype="snmpif" 
     | stats first(*) as * by _time host ifIndex 
     | streamstats window=2 global=false current=true range(if*Octets) as delta*, range(_time) as secs by host, ifIndex 
     | where secs>0 
