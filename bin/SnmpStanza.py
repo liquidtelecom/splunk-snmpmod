@@ -1,8 +1,11 @@
 import logging
 import sys
 import xml
-from snmputils import print_validation_error
+
 from pysnmp.entity.rfc3413.oneliner import cmdgen
+
+from snmputils import print_validation_error
+
 
 __author__ = 'John'
 
@@ -281,4 +284,3 @@ class SnmpIf(SnmpStanza):
     </endpoint>
 </scheme>
 """
-

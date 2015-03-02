@@ -2,29 +2,27 @@
 SNMP Interface Modular Input
 """
 
-import logging
-import xml.dom.minidom
-import xml.sax.saxutils
 import time
 import os
 import sys
 
 SPLUNK_HOME = os.environ.get("SPLUNK_HOME")
 
+print os.environ
+
 # dynamically load in any eggs in /etc/apps/snmp_ta/bin
-egg_dir = SPLUNK_HOME + "/etc/apps/snmp_ta/bin/"
+egg_dir = os.path.join(SPLUNK_HOME, "etc", "apps", "snmpmod", "bin")
 for filename in os.listdir(egg_dir):
     if filename.endswith(".egg"):
         sys.path.append(egg_dir + filename)
 
 # directory of the custom MIB eggs
-mib_egg_dir = SPLUNK_HOME + "/etc/apps/snmp_ta/bin/mibs"
+mib_egg_dir = os.path.join(egg_dir, "mibs")
 sys.path.append(mib_egg_dir)
 for filename in os.listdir(mib_egg_dir):
     if filename.endswith(".egg"):
-        sys.path.append(mib_egg_dir + "/" + filename)
+        sys.path.append(os.path.join(mib_egg_dir, filename))
 
-from pysnmp.entity.rfc3413.oneliner import cmdgen
 from pysnmp.smi import builder
 from pysnmp.smi import view
 from SnmpStanza import *
@@ -56,12 +54,9 @@ def do_run():
         # update all the root StreamHandlers with a new formatter that includes the config information
         for h in logging.root.handlers:
             if isinstance(h, logging.StreamHandler):
-                h.setFormatter(logging.Formatter(
-                    '%(levelname)s %(message)s snmp-iface:{0} snmp_destination:{1} snmp_port:{2}'.format(
-                        snmpif.name(), snmpif.destination(), snmpif.port())))
+                h.setFormatter(logging.Formatter('%(levelname)s snmp-iface="{0}" %(message)s'.format(snmpif.name())))
 
-    except:  # catch *all* exceptions
-        e = sys.exc_info()[1]
+    except Exception as e:  # catch *all* exceptions
         logging.error("Couldn't update logging templates: %s host:'" % str(e))
 
     # MIBs to load
@@ -113,7 +108,7 @@ def do_run():
                     else:
                         handle_output(var_binds, snmpif.destination())
 
-            except:  # catch *all* exceptions
+            except Exception:  # catch *all* exceptions
                 logging.exception("Exception with getCmd to %s:%s" % (snmpif.destination(), snmpif.port))
                 time.sleep(float(snmpif.snmpinterval()))
                 continue
