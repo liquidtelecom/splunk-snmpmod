@@ -8,8 +8,6 @@ import sys
 
 SPLUNK_HOME = os.environ.get("SPLUNK_HOME")
 
-print os.environ
-
 # dynamically load in any eggs in /etc/apps/snmp_ta/bin
 egg_dir = os.path.join(SPLUNK_HOME, "etc", "apps", "snmpmod", "bin")
 for filename in os.listdir(egg_dir):
