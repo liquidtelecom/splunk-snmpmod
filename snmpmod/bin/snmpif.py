@@ -52,7 +52,7 @@ def do_run():
         # update all the root StreamHandlers with a new formatter that includes the config information
         for h in logging.root.handlers:
             if isinstance(h, logging.StreamHandler):
-                h.setFormatter(logging.Formatter('%(levelname)s snmp-iface="{0}" %(message)s'.format(snmpif.name())))
+                h.setFormatter(logging.Formatter('%(levelname)s snmpif="{0}" %(message)s'.format(snmpif.name())))
 
     except Exception as e:  # catch *all* exceptions
         logging.exception("Couldn't update logging templates: %s" % e)
