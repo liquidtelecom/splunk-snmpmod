@@ -22,44 +22,39 @@ class SnmpStanza():
         return "XML Scheme here.  Some way of extending it..."
 
     def read_config(self):
-        try:
-            # read everything from stdin
-            config_str = sys.stdin.read()
+        # read everything from stdin
+        config_str = sys.stdin.read()
 
-            # parse the config XML
-            doc = xml.dom.minidom.parseString(config_str)
-            root = doc.documentElement
-            conf_node = root.getElementsByTagName("configuration")[0]
-            if conf_node:
-                logging.debug("XML: found configuration")
-                stanza = conf_node.getElementsByTagName("stanza")[0]
-                if stanza:
-                    stanza_name = stanza.getAttribute("name")
-                    if stanza_name:
-                        logging.debug("XML: found stanza " + stanza_name)
-                        self.conf["name"] = stanza_name
+        # parse the config XML
+        doc = xml.dom.minidom.parseString(config_str)
+        root = doc.documentElement
+        conf_node = root.getElementsByTagName("configuration")[0]
+        if conf_node:
+            logging.debug("XML: found configuration")
+            stanza = conf_node.getElementsByTagName("stanza")[0]
+            if stanza:
+                stanza_name = stanza.getAttribute("name")
+                if stanza_name:
+                    logging.debug("XML: found stanza " + stanza_name)
+                    self.conf["name"] = stanza_name
 
-                        params = stanza.getElementsByTagName("param")
-                        for param in params:
-                            param_name = param.getAttribute("name")
-                            logging.debug("XML: found param '%s'" % param_name)
-                            if param_name and param.firstChild and \
-                                            param.firstChild.nodeType == param.firstChild.TEXT_NODE:
-                                data = param.firstChild.data
-                                self.conf[param_name] = data
-                                logging.debug("XML: '%s' -> '%s'" % (param_name, data))
+                    params = stanza.getElementsByTagName("param")
+                    for param in params:
+                        param_name = param.getAttribute("name")
+                        logging.debug("XML: found param '%s'" % param_name)
+                        if param_name and param.firstChild and \
+                                        param.firstChild.nodeType == param.firstChild.TEXT_NODE:
+                            data = param.firstChild.data
+                            self.conf[param_name] = data
+                            logging.debug("XML: '%s' -> '%s'" % (param_name, data))
 
-            checkpnt_node = root.getElementsByTagName("checkpoint_dir")[0]
-            if (checkpnt_node and checkpnt_node.firstChild and
-                        checkpnt_node.firstChild.nodeType == checkpnt_node.firstChild.TEXT_NODE):
-                self.conf["checkpoint_dir"] = checkpnt_node.firstChild.data
+        checkpnt_node = root.getElementsByTagName("checkpoint_dir")[0]
+        if (checkpnt_node and checkpnt_node.firstChild and
+                    checkpnt_node.firstChild.nodeType == checkpnt_node.firstChild.TEXT_NODE):
+            self.conf["checkpoint_dir"] = checkpnt_node.firstChild.data
 
-            if not self.conf:
-                raise Exception("Invalid configuration received from Splunk.")
-
-        except:  # catch *all* exceptions
-            e = sys.exc_info()[1]
-            raise Exception("Error getting Splunk configuration via STDIN: %s" % str(e))
+        if not self.conf:
+            raise Exception("Invalid configuration received from Splunk.")
 
     def port(self):
         return int(self.conf.get("port", 161))

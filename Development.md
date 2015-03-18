@@ -19,10 +19,10 @@ SNMP IFACE
 
 
 
-    ./update.ps1 ; splunk cmd splunkd print-modinput-config snmpif snmpif://tst
-    cls ; ./update.ps1 ; splunk cmd splunkd print-modinput-config --debug snmpif snmpif://tst 2>&1 > out.txt
-    splunk cmd python $env:SPLUNK_HOME/etc/apps/snmp_ta/bin/snmpif.py
-    cls ; ./update.ps1 ; splunk cmd splunkd print-modinput-config snmpif snmpif://tst | splunk cmd python $env:SPLUNK_HOME/etc/apps/snmp_ta/bin/snmpif.py --validate-arguments
+    ./updateDevSplunk.ps1 ; splunk cmd splunkd print-modinput-config snmpif snmpif://tst
+    cls ; ./updateDevSplunk.ps1 ; splunk cmd splunkd print-modinput-config --debug snmpif snmpif://tst 2>&1 > out.txt
+    splunk cmd python $env:SPLUNK_HOME/etc/apps/snmpmod/bin/snmpif.py
+    cls ; ./updateDevSplunk.ps1 ; splunk cmd splunkd print-modinput-config snmpif snmpif://tst | splunk cmd python $env:SPLUNK_HOME/etc/apps/snmpmod/bin/snmpif.py --validate-arguments
 
 
 

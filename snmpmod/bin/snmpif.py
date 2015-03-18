@@ -135,8 +135,8 @@ def do_validate():
         if not snmpif.is_valid():
             logging.error("Validation failed")
             sys.exit(2)
-    except Exception:
-        logging.exception("Exception validating")
+    except Exception as ex:
+        logging.exception("Exception validating %s" % ex)
         sys.exit(1)
 
 
