@@ -55,7 +55,7 @@ def do_run():
                 h.setFormatter(logging.Formatter('%(levelname)s snmp-iface="{0}" %(message)s'.format(snmpif.name())))
 
     except Exception as e:  # catch *all* exceptions
-        logging.error("Couldn't update logging templates: %s host:'" % str(e))
+        logging.exception("Couldn't update logging templates: %s" % e)
 
     # MIBs to load
     mib_names_args = ['IF-MIB']
@@ -113,8 +113,8 @@ def do_run():
 
             time.sleep(float(snmpif.snmpinterval()))
 
-    except:
-        logging.exception("Exception in run")
+    except Exception as ex:
+        logging.exception("Exception in run: %s" % ex)
         sys.exit(1)
 
 

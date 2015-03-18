@@ -1,5 +1,6 @@
-# add your custom response handler class to this module
-import sys
+"""
+Response Handlers for the SNMP Mod app
+"""
 import json
 import string
 from datetime import datetime
@@ -46,14 +47,12 @@ class DefaultResponseHandler:
                 try:
                     (sym_name, mod_name), indices = mibvar.oidToMibName(mib_view, oid)
                     splunkevent += '%s::%s.%s =  ' % (mod_name, sym_name, '.'.join([v.prettyPrint() for v in indices]))
-                except:  # catch *all* exceptions
-                    e = sys.exc_info()[1]
+                except Exception as e:  # catch *all* exceptions
                     splunkevent += '%s =  ' % e
                 try:
                     decoded_val = mibvar.cloneFromMibValue(mib_view, mod_name, sym_name, val)
                     splunkevent += '%s ' % (decoded_val.prettyPrint())
-                except:  # catch *all* exceptions
-                    e = sys.exc_info()[1]
+                except Exception as e:  # catch *all* exceptions
                     splunkevent += '%s ' % e
             splunkevent = trap_metadata + splunkevent
             print_xml_single_instance_mode(destination, splunkevent)
