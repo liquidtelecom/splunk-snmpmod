@@ -106,8 +106,8 @@ def do_run():
                     else:
                         handle_output(var_binds, snmpif.destination())
 
-            except Exception:  # catch *all* exceptions
-                logging.exception("Exception with getCmd to %s:%s" % (snmpif.destination(), snmpif.port))
+            except Exception as ex:  # catch *all* exceptions
+                logging.exception("Exception with getCmd to %s:%s %s" % (snmpif.destination(), snmpif.port, ex))
                 time.sleep(float(snmpif.snmpinterval()))
                 continue
 
@@ -125,8 +125,8 @@ def handle_output(response_object, destination):
         handler = InterfaceResponseHandler()
         handler(response_object, destination)
         sys.stdout.flush()
-    except Exception:
-        logging.exception("Looks like an error handle the response output")
+    except Exception as ex:
+        logging.exception("Looks like an error handle the response output %s" % ex)
 
 
 def do_validate():

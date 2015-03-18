@@ -1,6 +1,6 @@
 import logging
 import sys
-import xml
+import xml.dom.minidom
 
 from pysnmp.entity.rfc3413.oneliner import cmdgen
 
