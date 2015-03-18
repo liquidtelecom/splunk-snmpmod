@@ -1,4 +1,6 @@
-cls ; ./update.ps1 ; splunk cmd splunkd print-modinput-config snmp snmp://HRE | splunk cmd python $env:SPLUNK_HOME/etc/apps/snmp_ta/bin/snmp.py
+These are development notes for working with SNMP and Splunk.  I dev on windows so they're all Powershell based
+
+cls ; ./update.ps1 ; splunk cmd splunkd print-modinput-config snmp snmp://HRE | splunk cmd python $env:SPLUNK_HOME/etc/apps/snmpmod/bin/snmp.py
 
 cls ; ./update.ps1 ; splunk cmd splunkd print-modinput-config --debug snmp snmp://HRE 2>&1 > out.tx
 
@@ -6,19 +8,13 @@ cls ; ./update.ps1 ; splunk cmd splunkd print-modinput-config --debug snmp snmp:
 
 
 
+SNMP IFACE
+==========
 
-
-# SNMP IFACE
-
-
-./update.ps1 ; splunk cmd splunkd print-modinput-config snmpif snmpif://tst
-
-cls ; ./update.ps1 ; splunk cmd splunkd print-modinput-config --debug snmpif snmpif://tst 2>&1 > out.txt
-
-
-splunk cmd python $env:SPLUNK_HOME/etc/apps/snmp_ta/bin/snmpif.py
-
-cls ; ./update.ps1 ; splunk cmd splunkd print-modinput-config snmpif snmpif://tst | splunk cmd python $env:SPLUNK_HOME/etc/apps/snmp_ta/bin/snmpif.py --validate-arguments
+    ./update.ps1 ; splunk cmd splunkd print-modinput-config snmpif snmpif://tst
+    cls ; ./update.ps1 ; splunk cmd splunkd print-modinput-config --debug snmpif snmpif://tst 2>&1 > out.txt
+    splunk cmd python $env:SPLUNK_HOME/etc/apps/snmp_ta/bin/snmpif.py
+    cls ; ./update.ps1 ; splunk cmd splunkd print-modinput-config snmpif snmpif://tst | splunk cmd python $env:SPLUNK_HOME/etc/apps/snmp_ta/bin/snmpif.py --validate-arguments
 
 
 
