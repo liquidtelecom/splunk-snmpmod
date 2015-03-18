@@ -38,7 +38,7 @@ splunk cmd splunkd print-modinput-config snmpif snmpif://LRW-PE2-KGL | splunk cm
 IPSLA Statistics
 ================
 
-    ./updateDevSplunk.ps1 ; splunk cmd splunkd print-modinput-config ipsla ipsla://tst
+    ./updateDevSplunk.ps1 ; splunk cmd splunkd print-modinput-config ipsla ipsla://tst | splunk cmd python $env:SPLUNK_HOME/etc/apps/snmpmod/bin/ipsla.py --validate-arguments
 
 
 

@@ -34,9 +34,13 @@ So, here are a few instructions for building and installing pycrypto yourself :
 * Download the pycrypto package from [https://www.dlitz.net/software/pycrypto/](https://www.dlitz.net/software/pycrypto/)
 * Then run these 3 commands (note : you will need to use a System python 2.7 runtime , not the Splunk python runtime)
 
-		python setup.py build
-		python setup.py install
-		python setup.py test
+    # From Python 2.7.9 onwards pip is included, in which case
+    pip2 install pycrypto
+    
+    # For older versions of Python run the following
+    python setup.py build
+    python setup.py install
+    python setup.py test
 
 * Browse to where the Crypto module was installed to ie: `/usr/local/lib/python2.7/dist-packages/Crypto`
 * Copy the `Crypto` directory to `$SPLUNK_HOME/etc/apps/snmpmod/bin`

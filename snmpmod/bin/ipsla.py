@@ -1,5 +1,5 @@
 """
-SNMP Interface Modular Input
+SNMP IPSLA Statistics Modular Input
 """
 
 import time
@@ -25,7 +25,7 @@ from pysnmp.smi import builder
 from pysnmp.smi import view
 from SnmpStanza import *
 
-snmpif = SnmpIf()
+runner = Ipsla()
 
 
 def get_cmd_gen(mib_names_args):
@@ -46,13 +46,13 @@ def get_cmd_gen(mib_names_args):
 
 
 def do_run():
-    snmpif.read_config()
+    runner.read_config()
 
     try:
         # update all the root StreamHandlers with a new formatter that includes the config information
         for h in logging.root.handlers:
             if isinstance(h, logging.StreamHandler):
-                h.setFormatter(logging.Formatter('%(levelname)s snmpif="{0}" %(message)s'.format(snmpif.name())))
+                h.setFormatter(logging.Formatter('%(levelname)s ipsla="{0}" %(message)s'.format(runner.name())))
 
     except Exception as e:  # catch *all* exceptions
         logging.exception("Couldn't update logging templates: %s" % e)
@@ -64,54 +64,39 @@ def do_run():
     cmd_gen, mib_view = get_cmd_gen(mib_names_args)
 
     try:
-        # These are all the OIDs for an interface from IF-MIB::
-        # http://tools.cisco.com/Support/SNMP/do/BrowseOID.do?objectInput=1.3.6.1.2.1.2.2.1.1
-        oid_base = ['1.3.6.1.2.1.2.2.1.1.',  # ifIndex
-                    '1.3.6.1.2.1.2.2.1.2.',  # ifDescr
-                    '1.3.6.1.2.1.2.2.1.3.',  # ifType
-                    '1.3.6.1.2.1.2.2.1.4.',  # IfMtu
-                    '1.3.6.1.2.1.2.2.1.5.',  # ifSpeed
-                    '1.3.6.1.2.1.2.2.1.6.',  # ifPhysAddress
-                    '1.3.6.1.2.1.2.2.1.7.',  # ifAdminStatus
-                    '1.3.6.1.2.1.2.2.1.8.',  # ifOperStatus
-                    '1.3.6.1.2.1.2.2.1.9.',  # ifLastChange
-                    '1.3.6.1.2.1.2.2.1.10.',  # ifInOctets
-                    '1.3.6.1.2.1.2.2.1.11.',  # ifInUcastPkts
-                    '1.3.6.1.2.1.2.2.1.12.',  # ifInNUcastPkts
-                    '1.3.6.1.2.1.2.2.1.13.',  # ifInDiscards
-                    '1.3.6.1.2.1.2.2.1.14.',  # ifInErrors
-                    '1.3.6.1.2.1.2.2.1.15.',  # ifInUnknownProtos
-                    '1.3.6.1.2.1.2.2.1.16.',  # ifOutOctets
-                    '1.3.6.1.2.1.2.2.1.17.',  # ifOutUcastPkts
-                    '1.3.6.1.2.1.2.2.1.18.',  # ifOutNUcastPkts
-                    '1.3.6.1.2.1.2.2.1.19.',  # ifOutDiscards
-                    '1.3.6.1.2.1.2.2.1.20.',  # ifOutErrors
-                    '1.3.6.1.2.1.2.2.1.21.',  # ifOUtQLen
-                    '1.3.6.1.2.1.2.2.1.22.',  # ifSpecific
-                    # High capacity counters
-                    # http://tools.cisco.com/Support/SNMP/do/BrowseOID.do?objectInput=1.3.6.1.2.1.31.1.1.1.6
-                    '1.3.6.1.2.1.31.1.1.1.6.',  # ifHCInOctets
-                    '1.3.6.1.2.1.31.1.1.1.10.']  # ifHCOutOctets
+        # http://tools.cisco.com/Support/SNMP/do/BrowseOID.do?objectInput=1.3.6.1.4.1.9.9.42.1.5.2.1.46
+        oid_base = ['1.3.6.1.4.1.9.9.42.1.5.2.1.1.',   # rttMonLatestJitterOperNumOfRTT
+                    '1.3.6.1.4.1.9.9.42.1.5.2.1.2.',   # rttMonLatestJitterOperRTTSum
+                    '1.3.6.1.4.1.9.9.42.1.5.2.1.4.',   # rttMonLatestJitterOperRTTMin
+                    '1.3.6.1.4.1.9.9.42.1.5.2.1.5.',   # rttMonLatestJitterOperRTTMax
+                    '1.3.6.1.4.1.9.9.42.1.5.2.1.26.',  # rttMonLatestJitterOperPacketLossSD
+                    '1.3.6.1.4.1.9.9.42.1.5.2.1.27.',  # rttMonLatestJitterOperPacketLossDS
+                    '1.3.6.1.4.1.9.9.42.1.5.2.1.28.',  # rttMonLatestJitterOperPacketOutOfSequence
+                    '1.3.6.1.4.1.9.9.42.1.5.2.1.29.',  # rttMonLatestJitterOperPacketMIA
+                    '1.3.6.1.4.1.9.9.42.1.5.2.1.30.',  # rttMonLatestJitterOperPacketLateArrival
+                    '1.3.6.1.4.1.9.9.42.1.5.2.1.31.',  # rttMonLatestJitterOperSense
+                    '1.3.6.1.4.1.9.9.42.1.5.2.1.46.',  # rttMonLatestJitterOperAvgJitter
+                    '1.3.6.1.4.1.9.9.42.1.2.10.1.1.']  # rttMonLatestRttOperCompletionTime
 
         while True:
             try:
-                for interface in snmpif.interfaces():
-                    oid_args = [str(b + interface) for b in oid_base]
+                for entry in runner.entries():
+                    oid_args = [str(b + entry) for b in oid_base]
                     error_indication, error_status, error_index, var_binds = cmd_gen.getCmd(
-                        snmpif.security_object(), snmpif.transport(), *oid_args, lookupNames=True, lookupValues=True)
+                        runner.security_object(), runner.transport(), *oid_args, lookupNames=True, lookupValues=True)
                     if error_indication:
                         logging.error(error_indication)
                     elif error_status:
                         logging.error(error_status)
                     else:
-                        handle_output(var_binds, snmpif.destination())
+                        handle_output(var_binds, runner.destination())
 
             except Exception as ex:  # catch *all* exceptions
-                logging.exception("Exception with getCmd to %s:%s %s" % (snmpif.destination(), snmpif.port, ex))
-                time.sleep(float(snmpif.snmpinterval()))
+                logging.exception("Exception with getCmd to %s:%s %s" % (runner.destination(), runner.port, ex))
+                time.sleep(float(runner.snmpinterval()))
                 continue
 
-            time.sleep(float(snmpif.snmpinterval()))
+            time.sleep(float(runner.snmpinterval()))
 
     except Exception as ex:
         logging.exception("Exception in run: %s" % ex)
@@ -131,8 +116,8 @@ def handle_output(response_object, destination):
 
 def do_validate():
     try:
-        snmpif.read_config()
-        if not snmpif.is_valid():
+        runner.read_config()
+        if not runner.is_valid():
             logging.error("Validation failed")
             sys.exit(2)
     except Exception as ex:
@@ -141,7 +126,7 @@ def do_validate():
 
 
 def do_scheme():
-    print snmpif.scheme()
+    print runner.scheme()
 
 
 def usage():
