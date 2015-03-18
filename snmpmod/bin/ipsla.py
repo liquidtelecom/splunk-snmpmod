@@ -6,6 +6,9 @@ import time
 import os
 import sys
 
+from responsehandlers import IpslaResponseHandler
+
+
 SPLUNK_HOME = os.environ.get("SPLUNK_HOME")
 
 # dynamically load in any eggs in /etc/apps/snmp_ta/bin
@@ -64,24 +67,10 @@ def do_run():
     cmd_gen, mib_view = get_cmd_gen(mib_names_args)
 
     try:
-        # http://tools.cisco.com/Support/SNMP/do/BrowseOID.do?objectInput=1.3.6.1.4.1.9.9.42.1.5.2.1.46
-        oid_base = ['1.3.6.1.4.1.9.9.42.1.5.2.1.1.',   # rttMonLatestJitterOperNumOfRTT
-                    '1.3.6.1.4.1.9.9.42.1.5.2.1.2.',   # rttMonLatestJitterOperRTTSum
-                    '1.3.6.1.4.1.9.9.42.1.5.2.1.4.',   # rttMonLatestJitterOperRTTMin
-                    '1.3.6.1.4.1.9.9.42.1.5.2.1.5.',   # rttMonLatestJitterOperRTTMax
-                    '1.3.6.1.4.1.9.9.42.1.5.2.1.26.',  # rttMonLatestJitterOperPacketLossSD
-                    '1.3.6.1.4.1.9.9.42.1.5.2.1.27.',  # rttMonLatestJitterOperPacketLossDS
-                    '1.3.6.1.4.1.9.9.42.1.5.2.1.28.',  # rttMonLatestJitterOperPacketOutOfSequence
-                    '1.3.6.1.4.1.9.9.42.1.5.2.1.29.',  # rttMonLatestJitterOperPacketMIA
-                    '1.3.6.1.4.1.9.9.42.1.5.2.1.30.',  # rttMonLatestJitterOperPacketLateArrival
-                    '1.3.6.1.4.1.9.9.42.1.5.2.1.31.',  # rttMonLatestJitterOperSense
-                    '1.3.6.1.4.1.9.9.42.1.5.2.1.46.',  # rttMonLatestJitterOperAvgJitter
-                    '1.3.6.1.4.1.9.9.42.1.2.10.1.1.']  # rttMonLatestRttOperCompletionTime
-
         while True:
             try:
                 for entry in runner.entries():
-                    oid_args = [str(b + entry) for b in oid_base]
+                    oid_args = [str(b + '.' + entry) for b in IpslaResponseHandler.symbols]
                     error_indication, error_status, error_index, var_binds = cmd_gen.getCmd(
                         runner.security_object(), runner.transport(), *oid_args, lookupNames=True, lookupValues=True)
                     if error_indication:
@@ -89,7 +78,7 @@ def do_run():
                     elif error_status:
                         logging.error(error_status)
                     else:
-                        handle_output(var_binds, runner.destination())
+                        handle_output(var_binds, runner.destination(), entry)
 
             except Exception as ex:  # catch *all* exceptions
                 logging.exception("Exception with getCmd to %s:%s %s" % (runner.destination(), runner.port, ex))
@@ -103,12 +92,12 @@ def do_run():
         sys.exit(1)
 
 
-def handle_output(response_object, destination):
+def handle_output(response_object, destination, entry):
     try:
-        from responsehandlers import InterfaceResponseHandler
+        from responsehandlers import IpslaResponseHandler
 
-        handler = InterfaceResponseHandler()
-        handler(response_object, destination)
+        handler = IpslaResponseHandler()
+        handler(response_object, destination, entry)
         sys.stdout.flush()
     except Exception as ex:
         logging.exception("Looks like an error handle the response output %s" % ex)
