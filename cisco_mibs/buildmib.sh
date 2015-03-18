@@ -1,3 +1,5 @@
+#!/bin/bash 
+
 build-pysnmp-mib SNMPv2-SMI.my > SNMPv2-SMI.py
 build-pysnmp-mib SNMPv2-TC.my > SNMPv2-TC.py
 build-pysnmp-mib IANAifType-MIB.my > IANAifType-MIB.py
