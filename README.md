@@ -45,7 +45,7 @@ snmpif Stanza
 ipsla Stanza
 ============
 
-    [snmpif://hostname]
+    [ipsla://hostname]
     destination = hostname
     snmp_version = 3
     v3_securityName = username
