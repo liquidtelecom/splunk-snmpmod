@@ -1,5 +1,6 @@
 $packageName = "snmpmod"
-$spl = ".\build\$packageName.spl"
+$outputDir = "target"
+$spl = ".\$outputDir\$packageName.spl"
 $tar = "$packageName.tar"
 
 if(Test-Path $spl) {
@@ -9,7 +10,7 @@ if(Test-Path $spl) {
 
 cp README.md $packageName
 
-mkdir -Force build
+mkdir -Force $outputDir
 
 7z a -ttar $tar "@compressfiles.txt"
 7z a -tgzip $spl $tar
