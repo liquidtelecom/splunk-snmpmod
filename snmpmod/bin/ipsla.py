@@ -3,49 +3,12 @@ SNMP IPSLA Statistics Modular Input
 """
 
 import time
-import os
-import sys
 
-from responsehandlers import IpslaResponseHandler
-
-
-SPLUNK_HOME = os.environ.get("SPLUNK_HOME")
-
-# dynamically load in any eggs in /etc/apps/snmp_ta/bin
-egg_dir = os.path.join(SPLUNK_HOME, "etc", "apps", "snmpmod", "bin")
-for filename in os.listdir(egg_dir):
-    if filename.endswith(".egg"):
-        sys.path.append(egg_dir + filename)
-
-# directory of the custom MIB eggs
-mib_egg_dir = os.path.join(egg_dir, "mibs")
-sys.path.append(mib_egg_dir)
-for filename in os.listdir(mib_egg_dir):
-    if filename.endswith(".egg"):
-        sys.path.append(os.path.join(mib_egg_dir, filename))
-
-from pysnmp.smi import builder
-from pysnmp.smi import view
+import snmputils
+import responsehandlers
 from SnmpStanza import *
 
 runner = Ipsla()
-
-
-def get_cmd_gen(mib_names_args):
-    global mib_view
-    # load in custom MIBS
-    cmd_gen = cmdgen.CommandGenerator()
-    mib_builder = cmd_gen.snmpEngine.msgAndPduDsp.mibInstrumController.mibBuilder
-    mib_sources = (builder.DirMibSource(mib_egg_dir),)
-    for mibfile in os.listdir(mib_egg_dir):
-        if mibfile.endswith(".egg"):
-            mib_sources = mib_sources + (builder.ZipMibSource(mibfile),)
-    mib_sources = mib_builder.getMibSources() + mib_sources
-    mib_builder.setMibSources(*mib_sources)
-    if mib_names_args:
-        mib_builder.loadModules(*mib_names_args)
-    mib_view = view.MibViewController(mib_builder)
-    return cmd_gen, mib_view
 
 
 def do_run():
@@ -64,13 +27,13 @@ def do_run():
     mib_names_args = ['IF-MIB']
 
     global mib_view
-    cmd_gen, mib_view = get_cmd_gen(mib_names_args)
+    cmd_gen, mib_view = snmputils.get_cmd_gen(mib_names_args)
 
     try:
         while True:
             try:
                 for entry in runner.entries():
-                    oid_args = [str(b + '.' + entry) for b in IpslaResponseHandler.symbols]
+                    oid_args = [str(b + '.' + entry) for b in responsehandlers.IpslaResponseHandler.symbols]
                     error_indication, error_status, error_index, var_binds = cmd_gen.getCmd(
                         runner.security_object(), runner.transport(), *oid_args, lookupNames=True, lookupValues=True)
                     if error_indication:

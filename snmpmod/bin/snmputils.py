@@ -1,5 +1,48 @@
 import xml
+import os
+import sys
+
+
+splunk_home = os.environ.get("SPLUNK_HOME")
+egg_dir = os.path.join(splunk_home, "etc", "apps", "snmpmod", "bin")
+
+# directory of the custom MIB eggs
+mib_egg_dir = os.path.join(egg_dir, "mibs")
+
+
+def load_eggs():
+    # dynamically load in any eggs in $SPLUNK_HOME/etc/apps/mod/bin
+    for filename in os.listdir(egg_dir):
+        if filename.endswith(".egg"):
+            sys.path.append(os.path.join(egg_dir, filename))
+
+    sys.path.append(mib_egg_dir)
+    for filename in os.listdir(mib_egg_dir):
+        if filename.endswith(".egg"):
+            sys.path.append(os.path.join(mib_egg_dir, filename))
+
+
+load_eggs()
 from pysnmp.entity.rfc3413.oneliner import cmdgen
+from pysnmp.smi import builder
+from pysnmp.smi import view
+
+
+def get_cmd_gen(mib_names_args):
+    global mib_view
+    # load in custom MIBS
+    cmd_gen = cmdgen.CommandGenerator()
+    mib_builder = cmd_gen.snmpEngine.msgAndPduDsp.mibInstrumController.mibBuilder
+    mib_sources = (builder.DirMibSource(mib_egg_dir),)
+    for mibfile in os.listdir(mib_egg_dir):
+        if mibfile.endswith(".egg"):
+            mib_sources = mib_sources + (builder.ZipMibSource(mibfile),)
+    mib_sources = mib_builder.getMibSources() + mib_sources
+    mib_builder.setMibSources(*mib_sources)
+    if mib_names_args:
+        mib_builder.loadModules(*mib_names_args)
+    mib_view = view.MibViewController(mib_builder)
+    return cmd_gen, mib_view
 
 
 def get_v3_auth_protocol(v3_auth_protocol_str):
