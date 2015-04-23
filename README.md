@@ -51,7 +51,7 @@ ipsla Stanza
     v3_securityName = username
     v3_authKey = password
     snmpinterval = 300
-    entries = 2,7
+    operations = 2,7
     index = network
     sourcetype = ipsla
 

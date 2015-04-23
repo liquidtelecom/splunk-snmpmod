@@ -285,16 +285,16 @@ class Ipsla(SnmpStanza):
     def __init__(self):
         SnmpStanza.__init__(self)
 
-    def entries(self):
-        entries_str = self.conf.get("entries", None)
-        if entries_str is None:
+    def operations(self):
+        operations_str = self.conf.get("operations", None)
+        if operations_str is None:
             return None
-        return [str(x.strip()) for x in entries_str.split(',')]
+        return [str(x.strip()) for x in operations_str.split(',')]
 
     def is_valid(self):
         valid = SnmpStanza.is_valid(self)
-        if self.entries() is None or len(self.entries()) < 1:
-            print_validation_error("Entries must contain at least one operation")
+        if self.operations() is None or len(self.operations()) < 1:
+            print_validation_error("operations must contain at least one operation")
             valid = False
 
         return valid
@@ -337,10 +337,10 @@ class Ipsla(SnmpStanza):
                 <required_on_edit>false</required_on_edit>
                 <required_on_create>false</required_on_create>
             </arg>
-            <arg name="entries">
-                <title>entries</title>
+            <arg name="operations">
+                <title>operations</title>
                 <description>
-                    1 or more ipsla statistic entries
+                    1 or more ipsla statistic operations
                 </description>
                 <required_on_edit>true</required_on_edit>
                 <required_on_create>true</required_on_create>

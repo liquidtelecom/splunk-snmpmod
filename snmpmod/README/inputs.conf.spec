@@ -54,8 +54,8 @@ port= <value>
 *The SNMP Version , 1 / 2C / 3 . Defaults to 2C
 snmp_version= <value>
 
-*1 or more entries
-entries = <value>
+*1 or more operations
+operations = <value>
 
 *Community String used for SNMP version 1 and 2C authentication.Defaults to "public"
 communitystring= <value>

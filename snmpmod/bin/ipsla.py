@@ -32,7 +32,7 @@ def do_run():
     try:
         while True:
             try:
-                for operation in runner.entries():
+                for operation in runner.operations():
                     oid_args = [str(b + '.' + operation) for b in responsehandlers.IpslaResponseHandler.symbols]
                     error_indication, error_status, error_index, var_binds = cmd_gen.getCmd(
                         runner.security_object(), runner.transport(), *oid_args, lookupNames=True, lookupValues=True)
