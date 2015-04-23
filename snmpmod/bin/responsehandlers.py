@@ -61,8 +61,8 @@ class IpslaResponseHandler:
         else:
             return 'unknown'
 
-    def __call__(self, response_object, destination, entry):
-        splunkevent = "%s entry=%s " % (datetime.isoformat(datetime.utcnow()), entry)
+    def __call__(self, response_object, destination, operation):
+        splunkevent = "%s operation=%s " % (datetime.isoformat(datetime.utcnow()), operation)
         for name, val in response_object:
             # getOid() gives you an ObjectIdentifier from pyasn.  I am stripping the last item off the list and turning
             # it into a string for the dictionary.

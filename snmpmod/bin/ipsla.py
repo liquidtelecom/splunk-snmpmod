@@ -32,8 +32,8 @@ def do_run():
     try:
         while True:
             try:
-                for entry in runner.entries():
-                    oid_args = [str(b + '.' + entry) for b in responsehandlers.IpslaResponseHandler.symbols]
+                for operation in runner.entries():
+                    oid_args = [str(b + '.' + operation) for b in responsehandlers.IpslaResponseHandler.symbols]
                     error_indication, error_status, error_index, var_binds = cmd_gen.getCmd(
                         runner.security_object(), runner.transport(), *oid_args, lookupNames=True, lookupValues=True)
                     if error_indication:
@@ -41,7 +41,7 @@ def do_run():
                     elif error_status:
                         logging.error(error_status)
                     else:
-                        handle_output(var_binds, runner.destination(), entry)
+                        handle_output(var_binds, runner.destination(), operation)
 
             except Exception as ex:  # catch *all* exceptions
                 logging.exception("Exception with getCmd to %s:%s %s" % (runner.destination(), runner.port, ex))
@@ -55,12 +55,12 @@ def do_run():
         sys.exit(1)
 
 
-def handle_output(response_object, destination, entry):
+def handle_output(response_object, destination, operation):
     try:
         from responsehandlers import IpslaResponseHandler
 
         handler = IpslaResponseHandler()
-        handler(response_object, destination, entry)
+        handler(response_object, destination, operation)
         sys.stdout.flush()
     except Exception as ex:
         logging.exception("Looks like an error handle the response output %s" % ex)

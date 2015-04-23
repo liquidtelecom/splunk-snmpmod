@@ -294,7 +294,7 @@ class Ipsla(SnmpStanza):
     def is_valid(self):
         valid = SnmpStanza.is_valid(self)
         if self.entries() is None or len(self.entries()) < 1:
-            print_validation_error("Entries must contain at least one entry")
+            print_validation_error("Entries must contain at least one operation")
             valid = False
 
         return valid
