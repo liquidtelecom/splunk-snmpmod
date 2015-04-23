@@ -1,10 +1,12 @@
 SnmpMod
 =======
 
-Splunk SNMP Modular Input
+Changelog
+---------
 
-This project was originally based on [SplunkModularInputsPythonFramework](https://github.com/damiendallimore/SplunkModularInputsPythonFramework).
-I have taken the SNMP modular input, refactored the python code to be more re-usable and added extra stanzas for polling interfaces and ipsla statistics.
+| Version | Change                                             |
+|---------|----------------------------------------------------|
+| v2.1.1  | <ul><li>Renamed IPSLA entry to operation</li></ul> |
 
 Deployment
 ==========
@@ -102,3 +104,10 @@ The search term shown above is quite expensive.  I am running the query above an
     | collect index=network sourcetype=snmp_traffic
 
 There is a trick there of using the most recent snmp_traffic event to start the next round of collections.  I run this search every 30 minutes.
+
+
+About
+=====
+
+This project was originally based on [SplunkModularInputsPythonFramework](https://github.com/damiendallimore/SplunkModularInputsPythonFramework).
+I have taken the SNMP modular input, refactored the python code to be more re-usable and added extra stanzas for polling interfaces and ipsla statistics.
