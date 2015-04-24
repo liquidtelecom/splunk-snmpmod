@@ -38,6 +38,7 @@ class IpslaResponseHandler:
     symbols = {
         '1.3.6.1.4.1.9.9.42.1.5.2.1.1': 'latestJitterNumOfRTT',
         '1.3.6.1.4.1.9.9.42.1.5.2.1.2': 'latestJitterRTTSum',
+        '1.3.6.1.4.1.9.9.42.1.5.2.1.3': 'latestJitterRTTSum2',
         '1.3.6.1.4.1.9.9.42.1.5.2.1.4': 'latestJitterRTTMin',
         '1.3.6.1.4.1.9.9.42.1.5.2.1.5': 'latestJitterRTTMax',
         '1.3.6.1.4.1.9.9.42.1.5.2.1.26': 'latestJitterPacketLossSD',
