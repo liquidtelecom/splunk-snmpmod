@@ -35,6 +35,7 @@ class IpslaResponseHandler:
         pass
 
     # http://tools.cisco.com/Support/SNMP/do/BrowseOID.do?objectInput=1.3.6.1.4.1.9.9.42.1.5.2.1.46
+    # http://www.oidview.com/mibs/9/CISCO-RTTMON-MIB.html
     symbols = {
         '1.3.6.1.4.1.9.9.42.1.5.2.1.1': 'latestJitterNumOfRTT',
         '1.3.6.1.4.1.9.9.42.1.5.2.1.2': 'latestJitterRTTSum',

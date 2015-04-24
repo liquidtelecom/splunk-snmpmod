@@ -1,13 +1,7 @@
 SnmpMod
 =======
 
-Changelog
----------
-
-| Version | Change                           |
-|:--------|:---------------------------------|
-| v2.1.2  | Removed RTTSumHigh from IPSLA    |
-| v2.1.1  | Renamed IPSLA entry to operation |
+[Release Notes](ReleaseNotes.md)
 
 Deployment
 ==========
