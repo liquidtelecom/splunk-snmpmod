@@ -34,7 +34,7 @@ class IpslaResponseHandler:
     def __init__(self, **args):
         pass
 
-    # http://tools.cisco.com/Support/SNMP/do/BrowseOID.do?objectInput=1.3.6.1.4.1.9.9.42.1.5.2.1.46
+    # http://tools.cisco.com/Support/SNMP/do/BrowseOID.do?objectInput=1.3.6.1.4.1.9.9.42.1.5.2.1.1
     # http://www.oidview.com/mibs/9/CISCO-RTTMON-MIB.html
     symbols = {
         '1.3.6.1.4.1.9.9.42.1.5.2.1.1': 'latestJitterNumOfRTT',
@@ -50,6 +50,7 @@ class IpslaResponseHandler:
         '1.3.6.1.4.1.9.9.42.1.5.2.1.31': 'latestJitterSense',
         '1.3.6.1.4.1.9.9.42.1.5.2.1.46': 'latestJitterAvgJitter',
         '1.3.6.1.4.1.9.9.42.1.2.10.1.1': 'latestRttCompletionTime',
+        '1.3.6.1.4.1.9.9.42.1.2.10.1.2': 'latestRttOperationResponse',
         '1.3.6.1.4.1.9.9.42.1.2.10.1.4': 'latestRttSenseDescription',
         '1.3.6.1.4.1.9.9.42.1.2.10.1.5': 'latestRttTime',
     }
