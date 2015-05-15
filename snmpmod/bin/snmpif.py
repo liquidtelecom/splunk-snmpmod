@@ -56,7 +56,9 @@ def do_run():
                     # High capacity counters
                     # http://tools.cisco.com/Support/SNMP/do/BrowseOID.do?objectInput=1.3.6.1.2.1.31.1.1.1.6
                     '1.3.6.1.2.1.31.1.1.1.6.',  # ifHCInOctets
-                    '1.3.6.1.2.1.31.1.1.1.10.']  # ifHCOutOctets
+                    '1.3.6.1.2.1.31.1.1.1.7.',  # ifHCInOctets
+                    '1.3.6.1.2.1.31.1.1.1.10.',  # ifHCOutOctets
+                    '1.3.6.1.2.1.31.1.1.1.11.']  # ifHCOutOctets
 
         while True:
             try:
