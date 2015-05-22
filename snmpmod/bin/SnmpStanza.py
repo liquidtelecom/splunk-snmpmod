@@ -6,7 +6,6 @@ from pysnmp.entity.rfc3413.oneliner import cmdgen
 
 from snmputils import print_validation_error
 
-
 __author__ = 'John'
 
 
@@ -79,7 +78,7 @@ class SnmpStanza():
         if self.ipv6():
             transport = cmdgen.Udp6TransportTarget((self.destination(), self.port()))
         else:
-            transport = cmdgen.UdpTransportTarget((self.destination(), self.port()))
+            transport = cmdgen.UdpTransportTarget((self.destination(), self.port()), timeout=2)
         return transport
 
     def security_object(self):
