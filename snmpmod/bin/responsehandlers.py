@@ -141,9 +141,7 @@ class JSONFormatterResponseHandler:
             print_xml_single_instance_mode(destination, json.dumps(values))
 
 
-            # prints XML stream
-
-
+# prints XML stream
 def print_xml_single_instance_mode(server, event):
     print "<stream><event><data>%s</data><host>%s</host></event></stream>" % (
         encode_xml_text(event), server)

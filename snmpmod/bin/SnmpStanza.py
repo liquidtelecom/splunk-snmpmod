@@ -6,10 +6,10 @@ from pysnmp.entity.rfc3413.oneliner import cmdgen
 
 from snmputils import print_validation_error
 
-__author__ = 'John'
+__author__ = 'John Oxley'
 
 
-class SnmpStanza():
+class SnmpStanza:
     """
     A class to represent a SNMP stanza in inputs.conf
     """
