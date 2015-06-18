@@ -1,5 +1,8 @@
 # Release Notes
 
+## v2.2.1
+* Increase transport timeout to 2 seconds
+
 ## v2.2.0
 * Added RTT Sum2 to IPSLA poller
 * Added operation response to IPSLA poller
