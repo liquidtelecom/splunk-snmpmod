@@ -21,9 +21,9 @@ As of Python 2.7.9, pip is included with the release.  Run
 
 
 * Windows
-  * Copy `C:\Python27\Lib\site-packages\Crypto` to `$SPLUNK_HOME\etc\apps\snmpmod\bin`
+  * Copy the folder `C:\Python27\Lib\site-packages\Crypto` to `$SPLUNK_HOME\etc\apps\snmpmod\bin`
 * Linux
-  * Copy `/usr/local/lib/python2.7/dist-packages/Crypto` to `$SPLUNK_HOME/etc/apps/snmpmod/bin`
+  * `cp -Rv /usr/local/lib/python2.7/dist-packages/Crypto $SPLUNK_HOME/etc/apps/snmpmod/bin`
 
 snmpif Stanza
 =============
