@@ -1,5 +1,8 @@
 # Release Notes
 
+## v2.3.0
+* Added jitter stats packet loss counters to IPSLA
+
 ## v2.2.1
 * Increase transport timeout to 2 seconds
 

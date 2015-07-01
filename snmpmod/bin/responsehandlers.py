@@ -53,6 +53,9 @@ class IpslaResponseHandler:
         '1.3.6.1.4.1.9.9.42.1.2.10.1.2': 'latestRttOperationResponse',
         '1.3.6.1.4.1.9.9.42.1.2.10.1.4': 'latestRttSenseDescription',
         '1.3.6.1.4.1.9.9.42.1.2.10.1.5': 'latestRttTime',
+        '1.3.6.1.4.1.9.9.42.1.3.5.1.34': 'jitterStatsPacketLossSD',
+        '1.3.6.1.4.1.9.9.42.1.3.5.1.35': 'jitterStatsPacketLossDS',
+        '1.3.6.1.4.1.9.9.42.1.3.5.1.37': 'jitterStatsPacketLossMIA',
     }
 
     @staticmethod
