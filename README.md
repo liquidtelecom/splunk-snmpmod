@@ -6,10 +6,12 @@ SnmpMod
 Deployment
 ==========
 
-    splunk install app snmpmod.spl -update 1 -auth admin:changeme
-    cd $SPLUNK_HOME/etc/apps/snmpmod
-    mkdir local
-    vim local/inputs.conf
+```shell
+splunk install app snmpmod.spl -update 1 -auth admin:changeme
+cd $SPLUNK_HOME/etc/apps/snmpmod
+mkdir local
+vim local/inputs.conf
+```
 
 SNMP v3
 -------
@@ -17,7 +19,9 @@ If you are using SNMP version 3 , you have to obtain the [PyCrypto](https://www.
 
 As of Python 2.7.9, pip is included with the release.  Run
 
-    pip2 install pycrypto
+```shell
+pip2 install pycrypto
+```
 
 
 * Windows
@@ -28,30 +32,33 @@ As of Python 2.7.9, pip is included with the release.  Run
 snmpif Stanza
 =============
 
-    [snmpif://hostname]
-    destination = hostname
-    snmp_version = 3
-    v3_securityName = username
-    v3_authKey = password
-    snmpinterval = 300
-    interfaces = 1,5,8,9
-    index = network
-	# The sourcetype can be whatever you want
-    sourcetype = snmpif
+```ini
+[snmpif://hostname]
+destination = hostname
+snmp_version = 3
+v3_securityName = username
+v3_authKey = password
+snmpinterval = 300
+interfaces = 1,5,8,9
+index = network
+# The sourcetype can be whatever you want
+sourcetype = snmpif
+```
 
 ipsla Stanza
 ============
 
-    [ipsla://hostname]
-    destination = hostname
-    snmp_version = 3
-    v3_securityName = username
-    v3_authKey = password
-    snmpinterval = 300
-    operations = 2,7
-    index = network
-    sourcetype = ipsla
-
+```ini
+[ipsla://hostname]
+destination = hostname
+snmp_version = 3
+v3_securityName = username
+v3_authKey = password
+snmpinterval = 300
+operations = 2,7
+index = network
+sourcetype = ipsla
+```
 
 Response Handlers
 =================
@@ -65,38 +72,46 @@ SNMP Interface Search Query
 
 I strongly recommend you [create a search macro](http://docs.splunk.com/Documentation/Splunk/latest/Search/Usesearchmacros) `snmpif_traffic` that uses `streamstats` to calculate the bits per second from the raw `snmpif` data. My macro is:
 
-    stats first(*) as * by _time host ifIndex
-    | streamstats window=2 global=false current=true range(if*Octets) as delta*, range(_time) as secs by host, ifIndex
-    | where secs>0
-    | eval bpsIn=coalesce(deltaHCIn, deltaIn)*8/secs
-    | eval bpsOut=coalesce(deltaHCOut, deltaOut)*8/secs
-    | eval mbpsIn=bpsIn/1000000 | eval mbpsOut=bpsOut/1000000
+```
+stats first(*) as * by _time host ifIndex
+| streamstats window=2 global=false current=true range(if*Octets) as delta*, range(_time) as secs by host, ifIndex
+| where secs>0
+| eval bpsIn=coalesce(deltaHCIn, deltaIn)*8/secs
+| eval bpsOut=coalesce(deltaHCOut, deltaOut)*8/secs
+| eval mbpsIn=bpsIn/1000000 | eval mbpsOut=bpsOut/1000000
+```
 
 Then to call it and display the results as a graph:
 
-    index=snmpif host=foo ifIndex=17 | `snmpif_parse`
-    | timechart bins=500 avg(mbpsIn) as "Mbps IN", avg(mbpsOut) as "Mbps OUT"
+```
+index=snmpif host=foo ifIndex=17 | `snmpif_parse`
+| timechart bins=500 avg(mbpsIn) as "Mbps IN", avg(mbpsOut) as "Mbps OUT"
+```
 
 And calculate 95th percentile figures
 
-    index=snmpif host=foo ifIndex=17 | `snmpif_parse`
-    | stats perc95(mbpsIn) as "IN", perc95(mbpsOut) as "OUT"
+```
+index=snmpif host=foo ifIndex=17 | `snmpif_parse`
+| stats perc95(mbpsIn) as "IN", perc95(mbpsOut) as "OUT"
+```
 
 Summary Collection
 ==================
 
 The search term shown above is quite expensive.  I am running the query above and collecting the data into a new index.
 
-    [search index=network sourcetype=snmp_traffic | stats first(_time) as earliest] index=network sourcetype="snmpif"
-    | stats first(*) as * by _time host ifIndex
-    | streamstats window=2 global=false current=true range(if*Octets) as delta*, range(_time) as secs by host, ifIndex
-    | where secs>0
-    | eval bpsIn=coalesce(deltaHCIn, deltaIn)*8/secs
-    | eval bpsOut=coalesce(deltaHCOut, deltaOut)*8/secs
-    | eval mbpsIn=bpsIn/1000000
-    | eval mbpsOut=bpsOut/1000000
-    | fields _time host ifIndex bpsIn bpsOut ifAdminStatus ifDescr ifMtu ifOperStatus ifPhysAddress ifSpecific ifSpeed ifType mbpsIn mbpsOut
-    | collect index=network sourcetype=snmp_traffic
+```
+[search index=network sourcetype=snmp_traffic | stats first(_time) as earliest] index=network sourcetype="snmpif"
+| stats first(*) as * by _time host ifIndex
+| streamstats window=2 global=false current=true range(if*Octets) as delta*, range(_time) as secs by host, ifIndex
+| where secs>0
+| eval bpsIn=coalesce(deltaHCIn, deltaIn)*8/secs
+| eval bpsOut=coalesce(deltaHCOut, deltaOut)*8/secs
+| eval mbpsIn=bpsIn/1000000
+| eval mbpsOut=bpsOut/1000000
+| fields _time host ifIndex bpsIn bpsOut ifAdminStatus ifDescr ifMtu ifOperStatus ifPhysAddress ifSpecific ifSpeed ifType mbpsIn mbpsOut
+| collect index=network sourcetype=snmp_traffic
+```
 
 There is a trick there of using the most recent snmp_traffic event to start the next round of collections.  I run this search every 30 minutes.
 
