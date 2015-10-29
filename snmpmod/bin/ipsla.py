@@ -7,6 +7,7 @@ from datetime import datetime
 
 import snmputils
 import responsehandlers
+from pysnmp.proto.rfc1905 import NoSuchInstance
 from SnmpStanza import *
 
 runner = Ipsla()
@@ -54,7 +55,7 @@ class IpslaResponseHandler:
             # getOid() gives you an ObjectIdentifier from pyasn.  I am stripping the last item off the list and turning
             # it into a string for the dictionary.
             symbol = self.get_mib_symbol(str(name.getOid()[0:-1]))
-            if not isinstance(val, responsehandlers.NoSuchInstance):
+            if not isinstance(val, NoSuchInstance):
                 splunkevent += '%s=%s ' % (symbol, responsehandlers.splunk_escape(val.prettyPrint()))
         responsehandlers.print_xml_single_instance_mode(destination, splunkevent)
 

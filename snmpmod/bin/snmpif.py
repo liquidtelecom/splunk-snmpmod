@@ -10,6 +10,22 @@ from SnmpStanza import *
 snmpif = SnmpIf()
 
 
+class InterfaceResponseHandler:
+    def __init__(self, **args):
+        pass
+
+    def __call__(self, response_object, destination):
+        from responsehandlers import splunk_escape, print_xml_single_instance_mode
+        from datetime import datetime
+        from pysnmp.proto.rfc1905 import NoSuchInstance
+        splunkevent = "%s " % (datetime.isoformat(datetime.utcnow()))
+        for name, val in response_object:
+            symbol = name.getMibSymbol()[1]
+            if not isinstance(val, NoSuchInstance):
+                splunkevent += '%s=%s ' % (symbol, splunk_escape(val.prettyPrint()))
+        print_xml_single_instance_mode(destination, splunkevent)
+
+
 def do_run():
     snmpif.read_config()
 
@@ -87,8 +103,6 @@ def do_run():
 
 def handle_output(response_object, destination):
     try:
-        from responsehandlers import InterfaceResponseHandler
-
         handler = InterfaceResponseHandler()
         handler(response_object, destination)
         sys.stdout.flush()

@@ -3,10 +3,8 @@ Response Handlers for the SNMP Mod app
 """
 import json
 import string
-from datetime import datetime
 
 from pysnmp.entity.rfc3413 import mibvar
-from pysnmp.proto.rfc1905 import NoSuchInstance
 
 
 def splunk_escape(input_string):
@@ -15,19 +13,6 @@ def splunk_escape(input_string):
         return "\"%s\"" % s
     else:
         return s
-
-
-class InterfaceResponseHandler:
-    def __init__(self, **args):
-        pass
-
-    def __call__(self, response_object, destination):
-        splunkevent = "%s " % (datetime.isoformat(datetime.utcnow()))
-        for name, val in response_object:
-            symbol = name.getMibSymbol()[1]
-            if not isinstance(val, NoSuchInstance):
-                splunkevent += '%s=%s ' % (symbol, splunk_escape(val.prettyPrint()))
-        print_xml_single_instance_mode(destination, splunkevent)
 
 
 # the default handler , does nothing , just passes the raw output directly to STDOUT
