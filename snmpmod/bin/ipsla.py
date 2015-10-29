@@ -3,12 +3,60 @@ SNMP IPSLA Statistics Modular Input
 """
 
 import time
+from datetime import datetime
 
 import snmputils
 import responsehandlers
 from SnmpStanza import *
 
 runner = Ipsla()
+
+
+class IpslaResponseHandler:
+    def __init__(self, **args):
+        pass
+
+    # http://tools.cisco.com/Support/SNMP/do/BrowseOID.do?objectInput=1.3.6.1.4.1.9.9.42.1.5.2.1.1
+    # http://www.oidview.com/mibs/9/CISCO-RTTMON-MIB.html
+    symbols = {
+        '1.3.6.1.4.1.9.9.42.1.5.2.1.1': 'latestJitterNumOfRTT',
+        '1.3.6.1.4.1.9.9.42.1.5.2.1.2': 'latestJitterRTTSum',
+        '1.3.6.1.4.1.9.9.42.1.5.2.1.3': 'latestJitterRTTSum2',
+        '1.3.6.1.4.1.9.9.42.1.5.2.1.4': 'latestJitterRTTMin',
+        '1.3.6.1.4.1.9.9.42.1.5.2.1.5': 'latestJitterRTTMax',
+        '1.3.6.1.4.1.9.9.42.1.5.2.1.26': 'latestJitterPacketLossSD',
+        '1.3.6.1.4.1.9.9.42.1.5.2.1.27': 'latestJitterPacketLossDS',
+        '1.3.6.1.4.1.9.9.42.1.5.2.1.28': 'latestJitterPacketOutOfSequence',
+        '1.3.6.1.4.1.9.9.42.1.5.2.1.29': 'latestJitterPacketMIA',
+        '1.3.6.1.4.1.9.9.42.1.5.2.1.30': 'latestJitterPacketLateArrival',
+        '1.3.6.1.4.1.9.9.42.1.5.2.1.31': 'latestJitterSense',
+        '1.3.6.1.4.1.9.9.42.1.5.2.1.46': 'latestJitterAvgJitter',
+        '1.3.6.1.4.1.9.9.42.1.2.10.1.1': 'latestRttCompletionTime',
+        '1.3.6.1.4.1.9.9.42.1.2.10.1.2': 'latestRttOperationResponse',
+        '1.3.6.1.4.1.9.9.42.1.2.10.1.4': 'latestRttSenseDescription',
+        '1.3.6.1.4.1.9.9.42.1.2.10.1.5': 'latestRttTime',
+        '1.3.6.1.4.1.9.9.42.1.3.5.1.34': 'jitterStatsPacketLossSD',
+        '1.3.6.1.4.1.9.9.42.1.3.5.1.35': 'jitterStatsPacketLossDS',
+        '1.3.6.1.4.1.9.9.42.1.3.5.1.37': 'jitterStatsPacketLossMIA',
+    }
+
+    @staticmethod
+    def get_mib_symbol(name):
+
+        if name in IpslaResponseHandler.symbols:
+            return IpslaResponseHandler.symbols[name]
+        else:
+            return 'unknown'
+
+    def __call__(self, response_object, destination, operation):
+        splunkevent = "%s operation=%s " % (datetime.isoformat(datetime.utcnow()), operation)
+        for name, val in response_object:
+            # getOid() gives you an ObjectIdentifier from pyasn.  I am stripping the last item off the list and turning
+            # it into a string for the dictionary.
+            symbol = self.get_mib_symbol(str(name.getOid()[0:-1]))
+            if not isinstance(val, responsehandlers.NoSuchInstance):
+                splunkevent += '%s=%s ' % (symbol, responsehandlers.splunk_escape(val.prettyPrint()))
+        responsehandlers.print_xml_single_instance_mode(destination, splunkevent)
 
 
 def do_run():
@@ -33,7 +81,7 @@ def do_run():
         while True:
             try:
                 for operation in runner.operations():
-                    oid_args = [str(b + '.' + operation) for b in responsehandlers.IpslaResponseHandler.symbols]
+                    oid_args = [str(b + '.' + operation) for b in IpslaResponseHandler.symbols]
                     error_indication, error_status, error_index, var_binds = cmd_gen.getCmd(
                         runner.security_object(), runner.transport(), *oid_args, lookupNames=True, lookupValues=True)
                     if error_indication:
@@ -57,8 +105,6 @@ def do_run():
 
 def handle_output(response_object, destination, operation):
     try:
-        from responsehandlers import IpslaResponseHandler
-
         handler = IpslaResponseHandler()
         handler(response_object, destination, operation)
         sys.stdout.flush()
