@@ -5,10 +5,10 @@ SNMP IPSLA Statistics Modular Input
 import time
 from datetime import datetime
 
+import pysnmp.proto.rfc1905
+
 import snmputils
 from SnmpStanza import *
-
-import pysnmp.proto.rfc1905
 
 
 class Qos(SnmpStanza):
@@ -32,10 +32,15 @@ class Qos(SnmpStanza):
     def stats(self):
         stats_str = self.conf.get("stats", None)
         if stats_str is None:
-            return statistics.keys()
+            return self.statistics.values()
+
         def get_stat_val(name):
             return next((sv for sv, sn in self.statistics.iteritems() if sn == name))
+
         return [get_stat_val(str(x.strip())) for x in stats_str.split(',')]
+
+    def stats_keys(self):
+        return [self.statistics[s] for s in self.stats()]
 
     def is_valid(self):
         valid = SnmpStanza.is_valid(self)
@@ -243,7 +248,8 @@ class Qos(SnmpStanza):
             '601391474': ('836311857', '7', 'REAL-TIME', '59392'),
         }
         """
-        oids = ['1.3.6.1.4.1.9.9.166.1.15.1.1.' + str(stat + '.' + index) for stat, index in zip(self.stats(), policy_indexes.keys())]
+        oids = ['1.3.6.1.4.1.9.9.166.1.15.1.1.' + str(stat + '.' + index) for stat, index in
+                zip(self.stats_keys(), policy_indexes.keys())]
         e_indication, e_status, e_index, res = self.walk_oids(oids)
         # output looks like
         # iso.3.6.1.4.1.9.9.166.1.15.1.1.7.836311857.601391474 = Gauge32: 59392
@@ -334,7 +340,7 @@ class Qos(SnmpStanza):
 runner = Qos()
 
 
-def do_run(debug = False):
+def do_run(debug=False):
     if debug:
         logging.root.setLevel('DEBUG')
     runner.read_config()
