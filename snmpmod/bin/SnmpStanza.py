@@ -262,18 +262,6 @@ class SnmpIf(SnmpStanza):
                 <required_on_edit>false</required_on_edit>
                 <required_on_create>false</required_on_create>
             </arg>
-            <arg name="response_handler">
-                <title>Response Handler</title>
-                <description>Python classname of custom response handler</description>
-                <required_on_edit>false</required_on_edit>
-                <required_on_create>false</required_on_create>
-            </arg>
-            <arg name="response_handler_args">
-                <title>Response Handler Arguments</title>
-                <description>Response Handler arguments string: key=value,key2=value2</description>
-                <required_on_edit>false</required_on_edit>
-                <required_on_create>false</required_on_create>
-            </arg>
         </args>
     </endpoint>
 </scheme>
