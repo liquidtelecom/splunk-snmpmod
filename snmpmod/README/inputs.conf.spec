@@ -1,79 +1,119 @@
+# This file contains possible attributes and values you can use to configure inputs for SNMP modular input
+# -*- mode: ini -*-
+# vim: set ft=dosini:
+
 [snmpif://<name>]
-*IP or hostname of the device you would like to query
 destination= <value>
+* IP or hostname of the device you would like to query
 
-*Whether or not this is an IP version 6 address. Defaults to false.
 ipv6= <value>
+* Whether or not this is an IP version 6 address. Defaults to false.
 
-*The SNMP port. Defaults to 161
 port= <value>
+* The SNMP port. Defaults to 161
 
-*The SNMP Version , 1 / 2C / 3 . Defaults to 2C
+* The SNMP Version , 1 / 2C / 3 . Defaults to 2C
 snmp_version= <value>
 
-*1 or more interface numbers
 interfaces = <value>
+* 1 or more interface numbers
 
-*Community String used for SNMP version 1 and 2C authentication.Defaults to "public"
 communitystring= <value>
+* Community String used for SNMP version 1 and 2C authentication.Defaults to "public"
 
-*SNMPv3 USM username
 v3_securityName= <value>
+* SNMPv3 USM username
 
-*SNMPv3 secret authorization key used within USM for SNMP PDU authorization. Setting it to a non-empty value implies MD5-based PDU authentication (defaults to usmHMACMD5AuthProtocol) to take effect. Default hashing method may be changed by means of further authProtocol parameter
 v3_authKey= <value>
+* SNMPv3 secret authorization key used within USM for SNMP PDU authorization. Setting it to a non-empty value implies MD5-based PDU authentication (defaults to usmHMACMD5AuthProtocol) to take effect. Default hashing method may be changed by means of further authProtocol parameter
 
-*SNMPv3 secret encryption key used within USM for SNMP PDU encryption. Setting it to a non-empty value implies MD5-based PDU authentication (defaults to usmHMACMD5AuthProtocol) and DES-based encryption (defaults to usmDESPrivProtocol) to take effect. Default hashing and/or encryption methods may be changed by means of further authProtocol and/or privProtocol parameters.
 v3_privKey= <value>
+* SNMPv3 secret encryption key used within USM for SNMP PDU encryption. Setting it to a non-empty value implies MD5-based PDU authentication (defaults to usmHMACMD5AuthProtocol) and DES-based encryption (defaults to usmDESPrivProtocol) to take effect. Default hashing and/or encryption methods may be changed by means of further authProtocol and/or privProtocol parameters.
 
-*may be used to specify non-default hash function algorithm. Possible values include usmHMACMD5AuthProtocol (default) / usmHMACSHAAuthProtocol / usmNoAuthProtocol
 v3_authProtocol= <value>
+* may be used to specify non-default hash function algorithm. Possible values include usmHMACMD5AuthProtocol (default) / usmHMACSHAAuthProtocol / usmNoAuthProtocol
 
-*may be used to specify non-default ciphering algorithm. Possible values include usmDESPrivProtocol (default) / usmAesCfb128Protocol / usm3DESEDEPrivProtocol / usmAesCfb192Protocol / usmAesCfb256Protocol / usmNoPrivProtocol
 v3_privProtocol= <value>
+* may be used to specify non-default ciphering algorithm. Possible values include usmDESPrivProtocol (default) / usmAesCfb128Protocol / usm3DESEDEPrivProtocol / usmAesCfb192Protocol / usmAesCfb256Protocol / usmNoPrivProtocol
 
-*How often to run the SNMP query (in seconds). Defaults to 60 seconds
 snmpinterval= <value>
-
-*Python classname of custom response handler
-response_handler= <value>
-
-*Response Handler arguments string ,  key=value,key2=value2
-response_handler_args= <value>
+* How often to run the SNMP query (in seconds). Defaults to 60 seconds
 
 [ipsla://<name>]
-*IP or hostname of the device you would like to query
 destination= <value>
+* IP or hostname of the device you would like to query
 
-*Whether or not this is an IP version 6 address. Defaults to false.
 ipv6= <value>
+* Whether or not this is an IP version 6 address. Defaults to false.
 
-*The SNMP port. Defaults to 161
 port= <value>
+* The SNMP port. Defaults to 161
 
-*The SNMP Version , 1 / 2C / 3 . Defaults to 2C
 snmp_version= <value>
+* The SNMP Version , 1 / 2C / 3 . Defaults to 2C
 
-*1 or more operations
 operations = <value>
+* 1 or more operations
 
-*Community String used for SNMP version 1 and 2C authentication.Defaults to "public"
 communitystring= <value>
+* Community String used for SNMP version 1 and 2C authentication.Defaults to "public"
 
-*SNMPv3 USM username
 v3_securityName= <value>
+* SNMPv3 USM username
 
-*SNMPv3 secret authorization key used within USM for SNMP PDU authorization. Setting it to a non-empty value implies MD5-based PDU authentication (defaults to usmHMACMD5AuthProtocol) to take effect. Default hashing method may be changed by means of further authProtocol parameter
 v3_authKey= <value>
+* SNMPv3 secret authorization key used within USM for SNMP PDU authorization. Setting it to a non-empty value implies MD5-based PDU authentication (defaults to usmHMACMD5AuthProtocol) to take effect. Default hashing method may be changed by means of further authProtocol parameter
 
-*SNMPv3 secret encryption key used within USM for SNMP PDU encryption. Setting it to a non-empty value implies MD5-based PDU authentication (defaults to usmHMACMD5AuthProtocol) and DES-based encryption (defaults to usmDESPrivProtocol) to take effect. Default hashing and/or encryption methods may be changed by means of further authProtocol and/or privProtocol parameters.
 v3_privKey= <value>
+* SNMPv3 secret encryption key used within USM for SNMP PDU encryption. Setting it to a non-empty value implies MD5-based PDU authentication (defaults to usmHMACMD5AuthProtocol) and DES-based encryption (defaults to usmDESPrivProtocol) to take effect. Default hashing and/or encryption methods may be changed by means of further authProtocol and/or privProtocol parameters.
 
-*may be used to specify non-default hash function algorithm. Possible values include usmHMACMD5AuthProtocol (default) / usmHMACSHAAuthProtocol / usmNoAuthProtocol
 v3_authProtocol= <value>
+* may be used to specify non-default hash function algorithm. Possible values include usmHMACMD5AuthProtocol (default) / usmHMACSHAAuthProtocol / usmNoAuthProtocol
 
-*may be used to specify non-default ciphering algorithm. Possible values include usmDESPrivProtocol (default) / usmAesCfb128Protocol / usm3DESEDEPrivProtocol / usmAesCfb192Protocol / usmAesCfb256Protocol / usmNoPrivProtocol
 v3_privProtocol= <value>
+* may be used to specify non-default ciphering algorithm. Possible values include usmDESPrivProtocol (default) / usmAesCfb128Protocol / usm3DESEDEPrivProtocol / usmAesCfb192Protocol / usmAesCfb256Protocol / usmNoPrivProtocol
 
-*How often to run the SNMP query (in seconds). Defaults to 60 seconds
 snmpinterval= <value>
+* How often to run the SNMP query (in seconds). Defaults to 60 seconds
+
+[qos://name]
+destination= <value>
+* IP or hostname of the device you would like to query
+
+ipv6= <value>
+* Whether or not this is an IP version 6 address. Defaults to false.
+
+port= <value>
+* The SNMP port. Defaults to 161
+
+snmp_version= <value>
+* The SNMP Version , 1 / 2C / 3 . Defaults to 2C
+
+interfaces = <value>
+* 1 or more SNMP interfaces to gather statistics for
+
+stats = <value>
+* Comma separated list of statistics to pull for each interface map.  Valid options are
+* prePolicyBitRate (1.3.6.1.4.1.9.9.166.1.15.1.1.7)
+* postPolicyBitRate (1.3.6.1.4.1.9.9.166.1.15.1.1.11)
+
+communitystring= <value>
+* Community String used for SNMP version 1 and 2C authentication.Defaults to "public"
+
+v3_securityName= <value>
+* SNMPv3 USM username
+
+v3_authKey= <value>
+* SNMPv3 secret authorization key used within USM for SNMP PDU authorization. Setting it to a non-empty value implies MD5-based PDU authentication (defaults to usmHMACMD5AuthProtocol) to take effect. Default hashing method may be changed by means of further authProtocol parameter
+
+v3_privKey= <value>
+* SNMPv3 secret encryption key used within USM for SNMP PDU encryption. Setting it to a non-empty value implies MD5-based PDU authentication (defaults to usmHMACMD5AuthProtocol) and DES-based encryption (defaults to usmDESPrivProtocol) to take effect. Default hashing and/or encryption methods may be changed by means of further authProtocol and/or privProtocol parameters.
+
+v3_authProtocol= <value>
+* may be used to specify non-default hash function algorithm. Possible values include usmHMACMD5AuthProtocol (default) / usmHMACSHAAuthProtocol / usmNoAuthProtocol
+
+v3_privProtocol= <value>
+* may be used to specify non-default ciphering algorithm. Possible values include usmDESPrivProtocol (default) / usmAesCfb128Protocol / usm3DESEDEPrivProtocol / usmAesCfb192Protocol / usmAesCfb256Protocol / usmNoPrivProtocol
+
+snmpinterval= <value>
+* How often to run the SNMP query (in seconds). Defaults to 60 seconds
