@@ -1,7 +1,7 @@
+import string
 import xml
 import os
 import sys
-
 
 splunk_home = os.environ.get("SPLUNK_HOME")
 egg_dir = os.path.join(splunk_home, "etc", "apps", "snmpmod", "bin")
@@ -121,3 +121,26 @@ def print_validation_error(s):
     """
     print "<error><message>%s</message></error>" % xml.sax.saxutils.escape(s)
 
+
+def splunk_escape(input_string):
+    s = string.replace(input_string, "'", "")
+    if any(c in string.whitespace for c in s):
+        return "\"%s\"" % s
+    else:
+        return s
+
+
+# prints XML stream
+def print_xml_single_instance_mode(server, event):
+    print "<stream><event><data>%s</data><host>%s</host></event></stream>" % (
+        encode_xml_text(event), server)
+
+
+def encode_xml_text(text):
+    text = text.replace("&", "&amp;")
+    text = text.replace("\"", "&quot;")
+    text = text.replace("'", "&apos;")
+    text = text.replace("<", "&lt;")
+    text = text.replace(">", "&gt;")
+    text = text.replace("\n", "")
+    return text

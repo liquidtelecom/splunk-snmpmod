@@ -48,5 +48,5 @@ Splunk
 Update from command line
 
 ```shell
-splunk install app build/snmpmod.spl -update 1 -auth admin:changeme
+splunk install app target/snmpmod.spl -update 1 -auth admin:changeme
 ```
