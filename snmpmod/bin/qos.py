@@ -32,7 +32,7 @@ class Qos(SnmpStanza):
     def stats(self):
         stats_str = self.conf.get("stats", None)
         if stats_str is None:
-            return []
+            return statistics.keys()
         def get_stat_val(name):
             return next((sv for sv, sn in self.statistics.iteritems() if sn == name))
         return [get_stat_val(str(x.strip())) for x in stats_str.split(',')]
@@ -42,12 +42,11 @@ class Qos(SnmpStanza):
         if self.interfaces() is None or len(self.interfaces()) < 1:
             print_validation_error("interfaces must contain at least one interface")
             valid = False
-        if self.stats() is None or len(self.stats()) < 1:
-            print_validation_error("stats must contain at least one statistic")
-            valid = False
-        if not set(self.stats()).issubset(set(self.statistics.values())):
-            print_validation_error("invalid stats value found")
-            valid = False
+        if self.stats() is not None and len(self.stats()) > 0:
+            print self.stats()
+            if not set(self.stats()).issubset(set(self.statistics.values())):
+                print_validation_error("invalid stats value found")
+                valid = False
 
         return valid
 

@@ -119,7 +119,7 @@ def print_validation_error(s):
     :param s:
     :return:
     """
-    print "<error><message>%s</message></error>" % xml.sax.saxutils.escape(s)
+    print "<error><message>%s</message></error>" % encode_xml_text(s)
 
 
 def splunk_escape(input_string):
