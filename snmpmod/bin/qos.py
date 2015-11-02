@@ -8,6 +8,8 @@ from datetime import datetime
 import snmputils
 from SnmpStanza import *
 
+import pysnmp.proto.rfc1905
+
 
 class Qos(SnmpStanza):
     # http://tools.cisco.com/Support/SNMP/do/BrowseOID.do?local=en&translate=Translate&objectInput=1.3.6.1.4.1.9.9.166.1.15.1.1
@@ -181,7 +183,7 @@ class Qos(SnmpStanza):
         }
         """
         oids = [str('1.3.6.1.4.1.9.9.166.1.2.1.1.1.' + i) for i in self.interfaces()]
-        e_indication, e_status, e_index, res = self.query_oids(oids)
+        e_indication, e_status, e_index, res = self.walk_oids(oids)
         if e_indication:
             logging.error(e_indication)
         elif e_status:
@@ -191,12 +193,14 @@ class Qos(SnmpStanza):
             # iso.3.6.1.4.1.9.9.166.1.2.1.1.1.324.1 = Gauge32: 836311857 <- policy index
             # iso.3.6.1.4.1.9.9.166.1.2.1.1.1.324.2 = Gauge32: 836311858
             policy_indexes = {}
-            for name, val in res:
-                # For direction, 1 is in, 2 is out
-                direction = 'in' if name.getOid()[-1] == '1' else 'out'
-                interface = str(name.getOid()[-2])
-                policy_index = val.prettyPrint()
-                policy_indexes[policy_index] = (interface, direction)
+            # res is a list of single item lists.  Flatten it
+            for [name, val] in [r for sublist in res for r in sublist]:
+                if not isinstance(val, pysnmp.proto.rfc1905.NoSuchInstance):
+                    # For direction, 1 is in, 2 is out
+                    direction = 'in' if name[-1] == 1 else 'out'
+                    interface = str(name[-2])
+                    policy_index = val.prettyPrint()
+                    policy_indexes[policy_index] = (interface, direction)
             return policy_indexes
 
     def get_config_indexes(self, indexes):
@@ -222,10 +226,11 @@ class Qos(SnmpStanza):
             logging.error(e_status)
         else:
             for name, val in res:
-                policy_index = str(name.getOid()[-2])
-                object_index = str(name.getOid()[-1])
-                value = str(val.prettyPrint())
-                config_indexes[(policy_index, object_index)] = value
+                if not isinstance(val, pysnmp.proto.rfc1905.NoSuchInstance):
+                    policy_index = str(name.getOid()[-2])
+                    object_index = str(name.getOid()[-1])
+                    value = str(val.prettyPrint())
+                    config_indexes[(policy_index, object_index)] = value
         return config_indexes
 
     def get_statistics(self, policy_indexes, class_maps):
@@ -265,8 +270,11 @@ class Qos(SnmpStanza):
     def run_once(self):
         try:
             class_maps = self.get_class_maps()
+            logging.debug("class_maps=" + str(class_maps))
             policy_indexes = self.get_policy_indexes()
+            logging.debug("policy_indexes=" + str(policy_indexes))
             statistics = self.get_statistics(policy_indexes, class_maps)
+            logging.debug("statistics=" + str(statistics))
             events = {}
             for object_index, (policy_index, statistic, class_map, value) in statistics:
                 interface, direction = policy_indexes[policy_index]
@@ -274,6 +282,8 @@ class Qos(SnmpStanza):
                 if key not in events:
                     events[key] = []
                 events[key].append(statistic, value)
+
+            logging.debug("events=" + str(events))
 
             for (interface, direction, class_map), vals in events:
                 splunkevent = "%s interface=%s direction=%s class_map=%s" % (datetime.isoformat(datetime.utcnow()),
@@ -303,7 +313,6 @@ class Qos(SnmpStanza):
         """
         class_maps = {}
         e_indication, e_status, e_index, res = self.walk_oids(['1.3.6.1.4.1.9.9.166.1.7.1.1.1'])
-        print(res)
         # iso.3.6.1.4.1.9.9.166.1.7.1.1.1.1819748200 = STRING: "ef"
         # iso.3.6.1.4.1.9.9.166.1.7.1.1.1.1965376995 = STRING: "class-default"
         if e_indication:
@@ -311,18 +320,18 @@ class Qos(SnmpStanza):
         elif e_status:
             logging.error(e_status)
         else:
-            print res
-            class_maps = dict(
-                (str(name.getOid()[-1]), str(val.prettyPrint()))
-                for name, val in res
-            )
+            for r in res:
+                name, val = r[0]
+                class_maps[str(name[-1])] = str(val.prettyPrint())
         return class_maps
 
 
 runner = Qos()
 
 
-def do_run():
+def do_run(debug = False):
+    if debug:
+        logging.root.setLevel('DEBUG')
     runner.read_config()
 
     try:
@@ -372,6 +381,8 @@ if __name__ == '__main__':
             do_scheme()
         elif sys.argv[1] == "--validate-arguments":
             do_validate()
+        elif sys.argv[1] == "--debug":
+            do_run(debug=True)
         else:
             usage()
     else:
