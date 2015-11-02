@@ -213,7 +213,7 @@ class Qos(SnmpStanza):
             ('policy_index', 'object_index'): 'config_index'
         }
         """
-        oids = [str('1.3.6.1.4.1.9.9.166.1.5.1.1.2' + policy_index + '.' + object_index) for policy_index, object_index
+        oids = [str('1.3.6.1.4.1.9.9.166.1.5.1.1.2.' + policy_index + '.' + object_index) for policy_index, object_index
                 in indexes]
         e_indication, e_status, e_index, res = self.query_oids(oids)
         # output looks like
@@ -227,8 +227,8 @@ class Qos(SnmpStanza):
         else:
             for name, val in res:
                 if not isinstance(val, pysnmp.proto.rfc1905.NoSuchInstance):
-                    policy_index = str(name.getOid()[-2])
-                    object_index = str(name.getOid()[-1])
+                    policy_index = str(name[-2])
+                    object_index = str(name[-1])
                     value = str(val.prettyPrint())
                     config_indexes[(policy_index, object_index)] = value
         return config_indexes
@@ -242,9 +242,8 @@ class Qos(SnmpStanza):
             '601391474': ('836311857', '7', 'REAL-TIME', '59392'),
         }
         """
-        oids = [str('1.3.6.1.4.1.9.9.166.1.15.1.1.' + stat + '.' + index) for stat, index in
-                zip(self.statistics.keys(), policy_indexes.keys())]
-        e_indication, e_status, e_index, res = self.query_oids(oids)
+        oids = [str(stat + '.' + index) for stat, index in zip(self.statistics.keys(), policy_indexes.keys())]
+        e_indication, e_status, e_index, res = self.walk_oids(oids)
         # output looks like
         # iso.3.6.1.4.1.9.9.166.1.15.1.1.7.836311857.601391474 = Gauge32: 59392
         #                      statistic ^.policy  ^.objInd ^^ =          ^^^ statistic value
@@ -254,13 +253,17 @@ class Qos(SnmpStanza):
         elif e_status:
             logging.error(e_status)
         else:
-            config_indexes = self.get_config_indexes(
-                dict((str(name.getOid()[-2]), str(name.getOid()[-1])) for name, val in res))
+            c_ind = []
+            flat_result = [r for sublist in res for r in sublist]
+            for [name, val] in flat_result:
+                c_ind.append((str(name[-2]), str(name[-1])))
+            config_indexes = self.get_config_indexes(c_ind)
+            logging.debug("config_indexes=" + str(config_indexes))
 
-            for name, val in res:
-                statistic = str(name.getOid()[-3])
-                policy_index = str(name.getOid()[-2])
-                object_index = str(name.getOid()[-1])
+            for name, val in flat_result:
+                statistic = str(name[-3])
+                policy_index = str(name[-2])
+                object_index = str(name[-1])
                 value = str(val.prettyPrint())
                 config_index = config_indexes[(policy_index, object_index)]
                 class_map = class_maps[config_index]
