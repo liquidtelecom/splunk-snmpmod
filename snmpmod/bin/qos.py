@@ -5,7 +5,6 @@ SNMP IPSLA Statistics Modular Input
 import time
 from datetime import datetime
 
-import responsehandlers
 from SnmpStanza import *
 import snmputils
 
@@ -276,11 +275,11 @@ class Qos(SnmpStanza):
             for (interface, direction, class_map), vals in events:
                 splunkevent = "%s interface=%s direction=%s class_map=%s" % (datetime.isoformat(datetime.utcnow()),
                                                                              interface, direction,
-                                                                             responsehandlers.splunk_escape(class_map))
+                                                                             snmputils.splunk_escape(class_map))
 
                 for statistic, value in vals:
                     splunkevent += '%s=%s ' % (statistic, value)
-                responsehandlers.print_xml_single_instance_mode(self.destination(), splunkevent)
+                snmputils.print_xml_single_instance_mode(self.destination(), splunkevent)
             sys.stdout.flush()
 
         except Exception as ex:  # catch *all* exceptions
