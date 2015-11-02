@@ -33,7 +33,9 @@ class Qos(SnmpStanza):
         stats_str = self.conf.get("stats", None)
         if stats_str is None:
             return []
-        return [str(x.strip()) for x in stats_str.split(',')]
+        def get_stat_val(name):
+            return next((sv for sv, sn in self.statistics.iteritems() if sn == name))
+        return [get_stat_val(str(x.strip())) for x in stats_str.split(',')]
 
     def is_valid(self):
         valid = SnmpStanza.is_valid(self)
@@ -242,12 +244,12 @@ class Qos(SnmpStanza):
             '601391474': ('836311857', '7', 'REAL-TIME', '59392'),
         }
         """
-        oids = ['1.3.6.1.4.1.9.9.166.1.15.1.1.' + str(stat + '.' + index) for stat, index in zip(self.statistics.keys(), policy_indexes.keys())]
+        oids = ['1.3.6.1.4.1.9.9.166.1.15.1.1.' + str(stat + '.' + index) for stat, index in zip(self.stats(), policy_indexes.keys())]
         e_indication, e_status, e_index, res = self.walk_oids(oids)
         # output looks like
         # iso.3.6.1.4.1.9.9.166.1.15.1.1.7.836311857.601391474 = Gauge32: 59392
         #                      statistic ^.policy  ^.objInd ^^ =          ^^^ statistic value
-        statistics = {}
+        stats_results = {}
         if e_indication:
             logging.error(e_indication)
         elif e_status:
@@ -267,8 +269,8 @@ class Qos(SnmpStanza):
                 value = str(val.prettyPrint())
                 config_index = config_indexes[(policy_index, object_index)]
                 class_map = class_maps[config_index]
-                statistics[object_index] = (policy_index, statistic, class_map, value)
-        return statistics
+                stats_results[object_index] = (policy_index, statistic, class_map, value)
+        return stats_results
 
     def run_once(self):
         try:
