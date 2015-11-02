@@ -5,10 +5,10 @@ SNMP IPSLA Statistics Modular Input
 import time
 from datetime import datetime
 
-import pysnmp.proto.rfc1905
 
 import snmputils
 from SnmpStanza import *
+import pysnmp.proto.rfc1905
 
 
 class Qos(SnmpStanza):
@@ -34,13 +34,12 @@ class Qos(SnmpStanza):
         if stats_str is None:
             return self.statistics.values()
 
-        def get_stat_val(name):
-            return next((sv for sv, sn in self.statistics.iteritems() if sn == name))
-
-        return [get_stat_val(str(x.strip())) for x in stats_str.split(',')]
+        return [str(x.strip()) for x in stats_str.split(',')]
 
     def stats_keys(self):
-        return [self.statistics[s] for s in self.stats()]
+        def get_stat_val(name):
+            return next((sv for sv, sn in self.statistics.iteritems() if sn == name))
+        return [get_stat_val(s) for s in self.stats()]
 
     def is_valid(self):
         valid = SnmpStanza.is_valid(self)
@@ -48,7 +47,6 @@ class Qos(SnmpStanza):
             print_validation_error("interfaces must contain at least one interface")
             valid = False
         if self.stats() is not None and len(self.stats()) > 0:
-            print self.stats()
             if not set(self.stats()).issubset(set(self.statistics.values())):
                 print_validation_error("invalid stats value found")
                 valid = False
@@ -248,6 +246,8 @@ class Qos(SnmpStanza):
             '601391474': ('836311857', '7', 'REAL-TIME', '59392'),
         }
         """
+
+        print self.stats_keys()
         oids = ['1.3.6.1.4.1.9.9.166.1.15.1.1.' + str(stat + '.' + index) for stat, index in
                 zip(self.stats_keys(), policy_indexes.keys())]
         e_indication, e_status, e_index, res = self.walk_oids(oids)
