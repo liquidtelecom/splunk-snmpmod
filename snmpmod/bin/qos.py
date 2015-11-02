@@ -167,6 +167,9 @@ class Qos(SnmpStanza):
     def query_oids(self, oids):
         return self.cmd_gen.getCmd(runner.security_object(), runner.transport(), *oids)
 
+    def walk_oids(self, oids):
+        return self.cmd_gen.nextCmd(runner.security_object(), runner.transport(), *oids)
+
     def get_policy_indexes(self):
         """
         Get the policy indexes for all configured interfaces
@@ -299,7 +302,8 @@ class Qos(SnmpStanza):
         }
         """
         class_maps = {}
-        e_indication, e_status, e_index, res = self.query_oids(['1.3.6.1.4.1.9.9.166.1.7.1.1.1'])
+        e_indication, e_status, e_index, res = self.walk_oids(['1.3.6.1.4.1.9.9.166.1.7.1.1.1'])
+        print(res)
         # iso.3.6.1.4.1.9.9.166.1.7.1.1.1.1819748200 = STRING: "ef"
         # iso.3.6.1.4.1.9.9.166.1.7.1.1.1.1965376995 = STRING: "class-default"
         if e_indication:
