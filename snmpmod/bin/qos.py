@@ -15,8 +15,8 @@ class Qos(SnmpStanza):
     # http://tools.cisco.com/Support/SNMP/do/BrowseOID.do?local=en&translate=Translate&objectInput=1.3.6.1.4.1.9.9.166.1.15.1.1
     # Valid QoS statistics
     statistics = {
-        '1.3.6.1.4.1.9.9.166.1.15.1.1.7': 'prePolicyBitRate',
-        '1.3.6.1.4.1.9.9.166.1.15.1.1.11': 'postPolicyBitRate',
+        '7': 'prePolicyBitRate',
+        '11': 'postPolicyBitRate',
     }
 
     def __init__(self):
@@ -242,7 +242,7 @@ class Qos(SnmpStanza):
             '601391474': ('836311857', '7', 'REAL-TIME', '59392'),
         }
         """
-        oids = [str(stat + '.' + index) for stat, index in zip(self.statistics.keys(), policy_indexes.keys())]
+        oids = ['1.3.6.1.4.1.9.9.166.1.15.1.1.' + str(stat + '.' + index) for stat, index in zip(self.statistics.keys(), policy_indexes.keys())]
         e_indication, e_status, e_index, res = self.walk_oids(oids)
         # output looks like
         # iso.3.6.1.4.1.9.9.166.1.15.1.1.7.836311857.601391474 = Gauge32: 59392
@@ -261,7 +261,7 @@ class Qos(SnmpStanza):
             logging.debug("config_indexes=" + str(config_indexes))
 
             for name, val in flat_result:
-                statistic = str(name[-3])
+                statistic = self.statistics[str(name[-3])]
                 policy_index = str(name[-2])
                 object_index = str(name[-1])
                 value = str(val.prettyPrint())
@@ -279,22 +279,23 @@ class Qos(SnmpStanza):
             statistics = self.get_statistics(policy_indexes, class_maps)
             logging.debug("statistics=" + str(statistics))
             events = {}
-            for object_index, (policy_index, statistic, class_map, value) in statistics:
+            for object_index, stats in statistics.iteritems():
+                policy_index, statistic, class_map, value = stats
                 interface, direction = policy_indexes[policy_index]
                 key = (interface, direction, class_map)
                 if key not in events:
                     events[key] = []
-                events[key].append(statistic, value)
+                events[key].append((statistic, value))
 
             logging.debug("events=" + str(events))
 
-            for (interface, direction, class_map), vals in events:
+            for (interface, direction, class_map), vals in events.iteritems():
                 splunkevent = "%s interface=%s direction=%s class_map=%s" % (datetime.isoformat(datetime.utcnow()),
                                                                              interface, direction,
                                                                              snmputils.splunk_escape(class_map))
 
                 for statistic, value in vals:
-                    splunkevent += '%s=%s ' % (statistic, value)
+                    splunkevent += ' %s=%s' % (statistic, value)
                 snmputils.print_xml_single_instance_mode(self.destination(), splunkevent)
             sys.stdout.flush()
 
