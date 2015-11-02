@@ -5,9 +5,10 @@ SNMP IPSLA Statistics Modular Input
 import time
 from datetime import datetime
 
-from pysnmp.proto.rfc1905 import NoSuchInstance
 
 import snmputils
+from pysnmp.proto.rfc1905 import NoSuchInstance
+
 import responsehandlers
 from SnmpStanza import *
 

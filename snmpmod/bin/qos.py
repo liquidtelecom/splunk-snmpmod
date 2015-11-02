@@ -5,8 +5,8 @@ SNMP IPSLA Statistics Modular Input
 import time
 from datetime import datetime
 
-from SnmpStanza import *
 import snmputils
+from SnmpStanza import *
 
 
 class Qos(SnmpStanza):
@@ -28,7 +28,7 @@ class Qos(SnmpStanza):
         return [str(x.strip()) for x in interfaces_str.split(',')]
 
     def stats(self):
-        stats_str = self.conf.get("interfaces", None)
+        stats_str = self.conf.get("stats", None)
         if stats_str is None:
             return []
         return [str(x.strip()) for x in stats_str.split(',')]
@@ -93,7 +93,7 @@ class Qos(SnmpStanza):
                 <required_on_edit>true</required_on_edit>
                 <required_on_create>true</required_on_create>
             </arg>
-            <arg name="statistics">
+            <arg name="stats">
                 <title>interfaces</title>
                 <description>
                     1 or more statistics to poll for each interface
@@ -307,6 +307,7 @@ class Qos(SnmpStanza):
         elif e_status:
             logging.error(e_status)
         else:
+            print res
             class_maps = dict(
                 (str(name.getOid()[-1]), str(val.prettyPrint()))
                 for name, val in res
