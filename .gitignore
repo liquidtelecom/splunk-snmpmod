@@ -1,3 +1,6 @@
+# Skip the hosts.rake file
+hosts.rake
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
