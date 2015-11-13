@@ -1,10 +1,8 @@
-SnmpMod
-=======
+# SnmpMod
 
 [Release Notes](ReleaseNotes.md)
 
-Deployment
-==========
+# Deployment
 
 ```shell
 splunk install app snmpmod.spl -update 1 -auth admin:changeme
@@ -13,8 +11,8 @@ mkdir local
 vim local/inputs.conf
 ```
 
-SNMP v3
--------
+## SNMP v3
+
 If you are using SNMP version 3 , you have to obtain the [PyCrypto](https://www.dlitz.net/software/pycrypto/) package yourself:
 
 As of Python 2.7.9, pip is included with the release.  Run
@@ -29,8 +27,7 @@ pip2 install pycrypto
 * Linux
   * `cp -Rv /usr/local/lib/python2.7/dist-packages/Crypto $SPLUNK_HOME/etc/apps/snmpmod/bin`
 
-snmpif Stanza
-=============
+# snmpif Stanza
 
 ```ini
 [snmpif://hostname]
@@ -45,8 +42,7 @@ index = network
 sourcetype = snmpif
 ```
 
-ipsla Stanza
-============
+# ipsla Stanza
 
 ```ini
 [ipsla://hostname]
@@ -60,15 +56,27 @@ index = network
 sourcetype = ipsla
 ```
 
-Response Handlers
-=================
+# qos Stanza
 
-destination, host and /etc/hosts
---------------------------------
+```ini
+[qos://test]
+destination = 10.0.0.1
+interfaces = 151
+snmp_version = 3
+v3_securityName = user
+v3_authKey =  auth
+snmpinterval = 60
+index = index
+sourcetype = cbqos
+```
+
+# Response Handlers
+
+## destination, host and /etc/hosts
+
 Currently, all response handlers set the Splunk host to the value of destination.  If you don't have DNS (bad sysadmin!) add an entry to /etc/hosts.  I'd be very happy to take a pull request that will look at a `host` config option and override `destination` with that value.
 
-SNMP Interface Search Query
-===========================
+# SNMP Interface Search Query
 
 I strongly recommend you [create a search macro](http://docs.splunk.com/Documentation/Splunk/latest/Search/Usesearchmacros) `snmpif_traffic` that uses `streamstats` to calculate the bits per second from the raw `snmpif` data. My macro is:
 
@@ -95,8 +103,7 @@ index=snmpif host=foo ifIndex=17 | `snmpif_parse`
 | stats perc95(mbpsIn) as "IN", perc95(mbpsOut) as "OUT"
 ```
 
-Summary Collection
-==================
+# Summary Collection
 
 The search term shown above is quite expensive.  I am running the query above and collecting the data into a new index.
 
@@ -116,8 +123,7 @@ The search term shown above is quite expensive.  I am running the query above an
 There is a trick there of using the most recent snmp_traffic event to start the next round of collections.  I run this search every 30 minutes.
 
 
-About
-=====
+# About
 
 This project was originally based on [SplunkModularInputsPythonFramework](https://github.com/damiendallimore/SplunkModularInputsPythonFramework).
 I have taken the SNMP modular input, refactored the python code to be more re-usable and added extra stanzas for polling interfaces and ipsla statistics.

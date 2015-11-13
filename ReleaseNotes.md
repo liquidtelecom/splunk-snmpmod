@@ -1,5 +1,8 @@
 # Release Notes
 
+## v2.4.0
+* Added `qos` section for querying CB QOS policy rates
+
 ## v2.3.0
 * Added jitter stats packet loss counters to IPSLA
 
