@@ -1,0 +1,7 @@
+# This is the top most file
+
+root = true
+
+[Rakefile]
+indent_style = space
+indent_size = 2
