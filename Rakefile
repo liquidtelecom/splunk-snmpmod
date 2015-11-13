@@ -10,8 +10,7 @@ import 'hosts.rake'
 task :deploy do
   on DEPLOYMENT_HOSTS do |host|
     upload! 'target/snmpmod.spl', 'snmpmod.spl'
-    cmd="sudo /opt/splunk/bin/splunk install app snmpmod.spl -update 1 -auth #{SPLUNK_AUTH}"
-    puts cmd
-    execute cmd
+    execute "sudo /opt/splunk/bin/splunk install app snmpmod.spl -update 1 -auth #{SPLUNK_AUTH}"
+    execute "sudo /opt/splunk/bin/splunk restart"
   end
 end
