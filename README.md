@@ -78,16 +78,28 @@ Currently, all response handlers set the Splunk host to the value of destination
 
 # SNMP Interface Search Query
 
-I strongly recommend you [create a search macro](http://docs.splunk.com/Documentation/Splunk/latest/Search/Usesearchmacros) `snmpif_traffic` that uses `streamstats` to calculate the bits per second from the raw `snmpif` data. My macro is:
+I strongly recommend you [create a search macro](http://docs.splunk.com/Documentation/Splunk/latest/Search/Usesearchmacros) `snmpif_traffic` that uses `streamstats` to calculate the bits per second from the raw `snmpif` data.
+
+Note that I am checking `first(if*InOctets)` against the current value to see if the router has rebooted and avoid the spike in the graph.
+
+My macro is:
 
 ```
 stats first(*) as * by _time host ifIndex
-| streamstats window=2 global=false current=true range(if*Octets) as delta*, range(_time) as secs by host, ifIndex
-| where secs>0
+| streamstats window=2 global=false current=true range(if*Octets) as delta*, range(if*Pkts) as delta*Pkts, range(_time) as secs, first(if*InOctets) as prevIn* by host, ifIndex
+| eval prevInCounter=coalesce(prevInHC, prevIn)
+| eval currInCounter=coalesce(ifHCInOctets, ifInOctets)
+| where secs>0 AND currInCounter>prevInCounter
 | eval bpsIn=coalesce(deltaHCIn, deltaIn)*8/secs
 | eval bpsOut=coalesce(deltaHCOut, deltaOut)*8/secs
-| eval mbpsIn=bpsIn/1000000 | eval mbpsOut=bpsOut/1000000
+| eval mbpsIn=bpsIn/1000000
+| eval mbpsOut=bpsOut/1000000
+| eval ppsIn=coalesce(deltaHCInUcastPkts, deltaInUcastPkts)/secs
+| eval ppsOut=coalesce(deltaHCOutUcastPkts, deltaOutUcastPkts)/secs
+| eval kppsIn=ppsIn/1000
+| eval kppsOut=ppsOut/1000
 ```
+
 
 Then to call it and display the results as a graph:
 
