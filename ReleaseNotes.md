@@ -1,5 +1,8 @@
 # Release Notes
 
+## v2.5.0
+* Issue #2: Added `dropBitRate` to `qos` 
+
 ## v2.4.0
 * Added `qos` section for querying CB QOS policy rates
 
