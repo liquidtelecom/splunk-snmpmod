@@ -1,7 +1,7 @@
 # Release Notes
 
 ## v2.5.0
-* Issue #2: Added `dropBitRate` to `qos` 
+* [Issue #2](https://github.com/oxo42/snmpmod/issues/2): Added `dropBitRate` to `qos` 
 
 ## v2.4.0
 * Added `qos` section for querying CB QOS policy rates
