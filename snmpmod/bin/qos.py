@@ -17,6 +17,7 @@ class Qos(SnmpStanza):
     statistics = {
         '7': 'prePolicyBitRate',
         '11': 'postPolicyBitRate',
+        '18': 'dropBitRate',
     }
 
     def __init__(self):
