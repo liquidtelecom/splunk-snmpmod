@@ -5,10 +5,11 @@ SNMP IPSLA Statistics Modular Input
 import time
 from datetime import datetime
 
-
 import snmputils
 from SnmpStanza import *
 import pysnmp.proto.rfc1905
+
+logger = logging.getLogger("cbqos")
 
 
 class Qos(SnmpStanza):
@@ -40,6 +41,7 @@ class Qos(SnmpStanza):
     def stats_keys(self):
         def get_stat_val(name):
             return next((sv for sv, sn in self.statistics.iteritems() if sn == name))
+
         return [get_stat_val(s) for s in self.stats()]
 
     def is_valid(self):
@@ -190,9 +192,9 @@ class Qos(SnmpStanza):
         oids = [str('1.3.6.1.4.1.9.9.166.1.2.1.1.1.' + i) for i in self.interfaces()]
         e_indication, e_status, e_index, res = self.walk_oids(oids)
         if e_indication:
-            logging.error(e_indication)
+            logger.error(e_indication)
         elif e_status:
-            logging.error(e_status)
+            logger.error(e_status)
         else:
             # output looks like
             # iso.3.6.1.4.1.9.9.166.1.2.1.1.1.324.1 = Gauge32: 836311857 <- policy index
@@ -212,7 +214,8 @@ class Qos(SnmpStanza):
         """
         Get the config indexes for all policy & object indexes.
 
-        indexes is a list of (policy_index, object_index)
+        indexes is a list of tuples of (policy_index, object_index)
+        :param indexes: [(policy_index, object_inderx)]
         :return:
         {
             ('policy_index', 'object_index'): 'config_index'
@@ -221,14 +224,15 @@ class Qos(SnmpStanza):
         oids = [str('1.3.6.1.4.1.9.9.166.1.5.1.1.2.' + policy_index + '.' + object_index) for policy_index, object_index
                 in indexes]
         e_indication, e_status, e_index, res = self.query_oids(oids)
+        logger.debug("config_index_oids=" + str(res))
         # output looks like
         # iso.3.6.1.4.1.9.9.166.1.5.1.1.2.836311857.601391474 = Gauge32: 1965376995
 
         config_indexes = {}
         if e_indication:
-            logging.error(e_indication)
+            logger.error(e_indication)
         elif e_status:
-            logging.error(e_status)
+            logger.error(e_status)
         else:
             for name, val in res:
                 if not isinstance(val, pysnmp.proto.rfc1905.NoSuchInstance):
@@ -250,26 +254,32 @@ class Qos(SnmpStanza):
         }
         """
 
-        print self.stats_keys()
-        oids = ['1.3.6.1.4.1.9.9.166.1.15.1.1.' + str(stat + '.' + index) for stat, index in
-                zip(self.stats_keys(), policy_indexes.keys())]
+        logger.debug("stats_keys=" + str(self.stats_keys()))
+        oids = ['1.3.6.1.4.1.9.9.166.1.15.1.1.' + str(stat + '.' + index) for stat in self.stats_keys() for index in
+                policy_indexes.keys()]
+        logger.debug("oids=" + str(oids))
+
         e_indication, e_status, e_index, res = self.walk_oids(oids)
         # output looks like
         # iso.3.6.1.4.1.9.9.166.1.15.1.1.7.836311857.601391474 = Gauge32: 59392
         #                      statistic ^.policy  ^.objInd ^^ =          ^^^ statistic value
         stats_results = {}
         if e_indication:
-            logging.error(e_indication)
+            logger.error(e_indication)
         elif e_status:
-            logging.error(e_status)
+            logger.error(e_status)
         else:
             c_ind = []
+            logger.debug("res=" + str(res))
             flat_result = [r for sublist in res for r in sublist]
             for [name, _] in flat_result:
                 c_ind.append((str(name[-2]), str(name[-1])))
+            logger.debug("c_ind=" + str(c_ind))
             config_indexes = self.get_config_indexes(c_ind)
-            logging.debug("config_indexes=" + str(config_indexes))
+            logger.debug("config_indexes=" + str(config_indexes))
+            logger.debug("flat_result=" + str(flat_result))
 
+            stats_results = []
             for name, val in flat_result:
                 statistic = self.statistics[str(name[-3])]
                 policy_index = str(name[-2])
@@ -277,27 +287,27 @@ class Qos(SnmpStanza):
                 value = str(val.prettyPrint())
                 config_index = config_indexes[(policy_index, object_index)]
                 class_map = class_maps[config_index]
-                stats_results[object_index] = (policy_index, statistic, class_map, value)
+                stats_results += [(object_index, policy_index, statistic, class_map, value)]
+
         return stats_results
 
     def run_once(self):
         try:
             class_maps = self.get_class_maps()
-            logging.debug("class_maps=" + str(class_maps))
+            logger.debug("class_maps=" + str(class_maps))
             policy_indexes = self.get_policy_indexes()
-            logging.debug("policy_indexes=" + str(policy_indexes))
+            logger.debug("policy_indexes=" + str(policy_indexes))
             statistics = self.get_statistics(policy_indexes, class_maps)
-            logging.debug("statistics=" + str(statistics))
+            logger.debug("statistics=" + str(statistics))
             events = {}
-            for object_index, stats in statistics.iteritems():
-                policy_index, statistic, class_map, value = stats
+            for (object_index, policy_index, statistic, class_map, value) in statistics:
                 interface, direction = policy_indexes[policy_index]
                 key = (interface, direction, class_map)
                 if key not in events:
                     events[key] = []
                 events[key].append((statistic, value))
 
-            logging.debug("events=" + str(events))
+            logger.debug("events=" + str(events))
 
             for (interface, direction, class_map), vals in events.iteritems():
                 splunkevent = "%s interface=%s direction=%s class_map=%s" % (datetime.isoformat(datetime.utcnow()),
@@ -310,7 +320,7 @@ class Qos(SnmpStanza):
             sys.stdout.flush()
 
         except Exception as ex:  # catch *all* exceptions
-            logging.exception("Exception with getCmd to %s:%s %s" % (self.destination(), self.port(), ex))
+            logger.exception("Exception with getCmd to %s:%s %s" % (self.destination(), self.port(), ex))
             time.sleep(float(runner.snmpinterval()))
 
     def get_class_maps(self):
@@ -330,9 +340,9 @@ class Qos(SnmpStanza):
         # iso.3.6.1.4.1.9.9.166.1.7.1.1.1.1819748200 = STRING: "ef"
         # iso.3.6.1.4.1.9.9.166.1.7.1.1.1.1965376995 = STRING: "class-default"
         if e_indication:
-            logging.error(e_indication)
+            logger.error(e_indication)
         elif e_status:
-            logging.error(e_status)
+            logger.error(e_status)
         else:
             for r in res:
                 name, val = r[0]
@@ -343,9 +353,9 @@ class Qos(SnmpStanza):
 runner = Qos()
 
 
-def do_run(debug=False):
-    if debug:
-        logging.root.setLevel('DEBUG')
+def do_run():
+    # logging.root.setLevel('DEBUG')
+    logging.root.setLevel('INFO')
     runner.read_config()
 
     try:
@@ -355,7 +365,7 @@ def do_run(debug=False):
                 h.setFormatter(logging.Formatter('%(levelname)s qos="{0}" %(message)s'.format(runner.name())))
 
     except Exception as e:  # catch *all* exceptions
-        logging.exception("Couldn't update logging templates: %s" % e)
+        logger.exception("Couldn't update logger templates: %s" % e)
 
     try:
         while True:
@@ -363,7 +373,7 @@ def do_run(debug=False):
             time.sleep(float(runner.snmpinterval()))
 
     except Exception as ex:
-        logging.exception("Exception in run: %s" % ex)
+        logger.exception("Exception in run: %s" % ex)
         sys.exit(1)
 
 
@@ -371,10 +381,10 @@ def do_validate():
     try:
         runner.read_config()
         if not runner.is_valid():
-            logging.error("Validation failed")
+            logger.error("Validation failed")
             sys.exit(2)
     except Exception as ex:
-        logging.exception("Exception validating %s" % ex)
+        logger.exception("Exception validating %s" % ex)
         sys.exit(1)
 
 
@@ -384,7 +394,7 @@ def do_scheme():
 
 def usage():
     print "usage: %s [--scheme|--validate-arguments]"
-    logging.error("Incorrect Program Usage")
+    logger.error("Incorrect Program Usage")
     sys.exit(2)
 
 
@@ -395,7 +405,7 @@ if __name__ == '__main__':
         elif sys.argv[1] == "--validate-arguments":
             do_validate()
         elif sys.argv[1] == "--debug":
-            do_run(debug=True)
+            do_run()
         else:
             usage()
     else:
