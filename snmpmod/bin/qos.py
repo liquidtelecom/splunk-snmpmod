@@ -241,6 +241,8 @@ class Qos(SnmpStanza):
     def get_statistics(self, policy_indexes, class_maps):
         """
         Get the config map statistics for all the policy indexes
+        :param class_maps: Class maps
+        :param policy_indexes: policy indexes
         :return:
         {
             'object_index': ('policy_index', 'statistic', 'class_map', 'value'),
@@ -263,7 +265,7 @@ class Qos(SnmpStanza):
         else:
             c_ind = []
             flat_result = [r for sublist in res for r in sublist]
-            for [name, val] in flat_result:
+            for [name, _] in flat_result:
                 c_ind.append((str(name[-2]), str(name[-1])))
             config_indexes = self.get_config_indexes(c_ind)
             logging.debug("config_indexes=" + str(config_indexes))
@@ -358,7 +360,6 @@ def do_run(debug=False):
     try:
         while True:
             runner.run_once()
-
             time.sleep(float(runner.snmpinterval()))
 
     except Exception as ex:
