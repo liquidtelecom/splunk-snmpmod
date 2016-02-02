@@ -1,5 +1,8 @@
 # Release Notes
 
+## v2.5.1
+* [Issue #3](https://github.com/oxo42/snmpmod/issues/3): Fixed statistics coming through
+
 ## v2.5.0
 * [Issue #2](https://github.com/oxo42/snmpmod/issues/2): Added `dropBitRate` to `qos` 
 
