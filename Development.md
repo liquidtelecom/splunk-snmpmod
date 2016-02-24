@@ -43,6 +43,14 @@ IPSLA Statistics
 ```
 
 
+QOS
+===
+```shell
+splunk cmd python $SPLUNK_HOME/etc/apps/snmpmod/bin/qos.py --scheme
+
+splunk cmd splunkd print-modinput-config qos qos://test | splunk cmd python $SPLUNK_HOME/etc/apps/snmpmod/bin/qos.py --validate-arguments
+``
+
 Splunk
 ======
 Update from command line

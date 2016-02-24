@@ -4,7 +4,7 @@ import xml.dom.minidom
 
 from pysnmp.entity.rfc3413.oneliner import cmdgen
 
-from snmputils import print_validation_error
+from snmputils import print_validation_error, splunk_escape
 
 __author__ = 'John Oxley'
 
@@ -46,6 +46,13 @@ class SnmpStanza:
                             data = param.firstChild.data
                             self.conf[param_name] = data
                             logging.debug("XML: '%s' -> '%s'" % (param_name, data))
+
+                    conf_dict = [(param, splunk_escape(self.conf[param]))
+                                 for param in self.conf
+                                 if param in ['destination', 'interfaces', 'operations']]
+
+                    conf_str = ' '.join(['%s=%s' % nvp for nvp in conf_dict])
+                    logging.info('action=configured stanza="%s" %s', self.conf['name'], conf_str)
 
         checkpnt_node = root.getElementsByTagName("checkpoint_dir")[0]
         if (checkpnt_node and checkpnt_node.firstChild and
@@ -138,131 +145,3 @@ class SnmpStanza:
         # TODO Validate security options??
 
         return valid
-
-
-class SnmpIf(SnmpStanza):
-    def __init__(self):
-        SnmpStanza.__init__(self)
-
-    def interfaces(self):
-        interfaces_str = self.conf.get("interfaces", None)
-        if interfaces_str is None:
-            return None
-        return [str(x.strip()) for x in interfaces_str.split(',')]
-
-    def is_valid(self):
-        valid = SnmpStanza.is_valid(self)
-        if self.interfaces() is None or len(self.interfaces()) < 1:
-            print_validation_error("Interfaces must contain at least one interface")
-            valid = False
-
-        return valid
-
-    def scheme(self):
-        return """<scheme>
-    <title>SNMP Interface</title>
-    <description>SNMP input to poll interfaces</description>
-    <use_external_validation>true</use_external_validation>
-    <streaming_mode>xml</streaming_mode>
-    <use_single_instance>false</use_single_instance>
-
-    <endpoint>
-        <args>
-            <arg name="name">
-                <title>SNMP Input Name</title>
-                <description>Name of this SNMP input</description>
-            </arg>
-            <arg name="destination">
-                <title>Destination</title>
-                <description>IP or hostname of the device you would like to query</description>
-                <required_on_edit>false</required_on_edit>
-                <required_on_create>false</required_on_create>
-            </arg>
-            <arg name="ipv6">
-                <title>IP Version 6</title>
-                <description>Whether or not this is an IP version 6 address. Defaults to false</description>
-                <required_on_edit>false</required_on_edit>
-                <required_on_create>false</required_on_create>
-            </arg>
-            <arg name="port">
-                <title>Port</title>
-                <description>The SNMP port. Defaults to 161</description>
-                <required_on_edit>false</required_on_edit>
-                <required_on_create>false</required_on_create>
-            </arg>
-            <arg name="snmp_version">
-                <title>SNMP Version</title>
-                <description>The SNMP Version , 1 or 2C, version 3 not currently supported. Defaults to 2C</description>
-                <required_on_edit>false</required_on_edit>
-                <required_on_create>false</required_on_create>
-            </arg>
-            <arg name="interfaces">
-                <title>Interfaces</title>
-                <description>
-                    1 or more interface numbers to poll
-                </description>
-                <required_on_edit>true</required_on_edit>
-                <required_on_create>true</required_on_create>
-            </arg>
-            <arg name="communitystring">
-                <title>Community String</title>
-                <description>Community String used for authentication.Defaults to "public"</description>
-                <required_on_edit>false</required_on_edit>
-                <required_on_create>false</required_on_create>
-            </arg>
-            <arg name="v3_securityName">
-                <title>SNMPv3 USM Username</title>
-                <description>SNMPv3 USM Username</description>
-                <required_on_edit>false</required_on_edit>
-                <required_on_create>false</required_on_create>
-            </arg>
-            <arg name="v3_authKey">
-                <title>SNMPv3 Authorization Key</title>
-                <description>
-                    SNMPv3 secret authorization key used within USM for SNMP PDU authorization. Setting it to a
-                    non-empty value implies MD5-based PDU authentication (defaults to usmHMACMD5AuthProtocol) to take
-                    effect. Default hashing method may be changed by means of further authProtocol parameter
-                </description>
-                <required_on_edit>false</required_on_edit>
-                <required_on_create>false</required_on_create>
-            </arg>
-            <arg name="v3_privKey">
-                <title>SNMPv3 Encryption Key</title>
-                <description>
-                    SNMPv3 secret encryption key used within USM for SNMP PDU encryption. Setting it to a non-empty
-                    value implies MD5-based PDU authentication (defaults to usmHMACMD5AuthProtocol) and DES-based
-                    encryption (defaults to usmDESPrivProtocol) to take effect. Default hashing and/or encryption
-                    methods may be changed by means of further authProtocol and/or privProtocol parameters.
-                </description>
-                <required_on_edit>false</required_on_edit>
-                <required_on_create>false</required_on_create>
-            </arg>
-            <arg name="v3_authProtocol">
-                <title>SNMPv3 Authorization Protocol</title>
-                <description>
-                    may be used to specify non-default hash function algorithm. Possible values include
-                    usmHMACMD5AuthProtocol (default) / usmHMACSHAAuthProtocol / usmNoAuthProtocol
-                </description>
-                <required_on_edit>false</required_on_edit>
-                <required_on_create>false</required_on_create>
-            </arg>
-            <arg name="v3_privProtocol">
-                <title>SNMPv3 Encryption Key Protocol</title>
-                <description>
-                    may be used to specify non-default ciphering algorithm. Possible values include usmDESPrivProtocol
-                    (default) / usmAesCfb128Protocol / usm3DESEDEPrivProtocol / usmAesCfb192Protocol /
-                    usmAesCfb256Protocol / usmNoPrivProtocol
-                </description>
-                <required_on_edit>false</required_on_edit>
-                <required_on_create>false</required_on_create>
-            </arg>
-            <arg name="snmpinterval">
-                <title>Interval</title>
-                <description>How often to run the SNMP query (in seconds). Defaults to 60 seconds</description>
-                <required_on_edit>false</required_on_edit>
-                <required_on_create>false</required_on_create>
-            </arg>
-        </args>
-    </endpoint>
-</scheme>
-"""

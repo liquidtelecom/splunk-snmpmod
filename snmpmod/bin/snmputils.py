@@ -1,5 +1,4 @@
 import string
-import xml
 import os
 import sys
 
@@ -26,23 +25,78 @@ load_eggs()
 from pysnmp.entity.rfc3413.oneliner import cmdgen
 from pysnmp.smi import builder
 from pysnmp.smi import view
+# noinspection PyUnresolvedReferences
+from pysnmp.proto.rfc1905 import NoSuchInstance
+import logging
+
+logging_format_string = '%(levelname)s file="%(filename)s" line=%(lineno)d %(message)s'
 
 
 def get_cmd_gen(mib_names_args):
-    global mib_view
-    # load in custom MIBS
     cmd_gen = cmdgen.CommandGenerator()
-    mib_builder = cmd_gen.snmpEngine.msgAndPduDsp.mibInstrumController.mibBuilder
-    mib_sources = (builder.DirMibSource(mib_egg_dir),)
-    for mibfile in os.listdir(mib_egg_dir):
-        if mibfile.endswith(".egg"):
-            mib_sources = mib_sources + (builder.ZipMibSource(mibfile),)
-    mib_sources = mib_builder.getMibSources() + mib_sources
-    mib_builder.setMibSources(*mib_sources)
-    if mib_names_args:
-        mib_builder.loadModules(*mib_names_args)
-    mib_view = view.MibViewController(mib_builder)
-    return cmd_gen, mib_view
+    return cmd_gen, 'a'
+
+
+class SnmpException(Exception):
+    def __init__(self, value):
+        self.value = value
+
+    def __str__(self):
+        return repr(self.value)
+
+
+def walk_oids(cmd_gen, security_object, transport, oids):
+    """
+    Takes a list of oids, runs them against the configured target returning the result table or throws and exception
+    :param cmd_gen: SNMP cmd_gen
+    :param security_object: SNMP security object
+    :param transport: SNMP transport
+    :param oids oids to poll
+    :returns Tuple of (e_indication, e_status, e_index, res)
+    """
+
+    snmp_result = cmd_gen.nextCmd(security_object, transport, *oids)
+    error_indication, error_status, error_index, var_binds_table = snmp_result
+
+    if error_indication:
+        logging.error('error=snmp_engine messsage="%s"', error_indication)
+        raise SnmpException('SNMP Engine Error: %s' % error_indication)
+    elif error_status:
+        logging.error('%s at %s' % (error_status.prettyPrint(),
+                                    error_index and var_binds_table[int(error_index) - 1][0] or '?'
+                                    )
+                      )
+        raise SnmpException("SNMP PDU-level Error: %s" % error_indication)
+
+    return var_binds_table
+
+
+def query_oids(cmd_gen, security_object, transport, oids):
+    """
+    Takes a list of oids and runs them against the target returning the results or throwing an exception
+    :param cmd_gen: SNMP cmd_gen
+    :param security_object: SNMP security object
+    :param transport: SNMP transport
+    :param oids oids to poll
+    """
+    # The difference between this and walk is query_oids expects an exact oid.  walk oids will take .4.5.1 and if
+    # there's a single value under .4.5.1.0 it will report on that
+    # I probably don't want to do a walk most of the time.  This shit is confusing :(
+
+    snmp_result = cmd_gen.getCmd(security_object, transport, *oids)
+    error_indication, error_status, error_index, var_binds_table = snmp_result
+
+    if error_indication:
+        logging.error('error=snmp_engine messsage="%s"', error_indication)
+        raise SnmpException('SNMP Engine Error: %s' % error_indication)
+    elif error_status:
+        logging.error('%s at %s' % (error_status.prettyPrint(),
+                                    error_index and var_binds_table[int(error_index) - 1][0] or '?'
+                                    )
+                      )
+        raise SnmpException("SNMP PDU-level Error: %s" % error_indication)
+
+    return var_binds_table
 
 
 def get_v3_auth_protocol(v3_auth_protocol_str):
@@ -144,3 +198,34 @@ def encode_xml_text(text):
     text = text.replace(">", "&gt;")
     text = text.replace("\n", "")
     return text
+
+
+def set_logger_format(name):
+    # noinspection PyBroadException
+    try:
+        # update all the root StreamHandlers with a new formatter that includes the config information
+        for h in logging.root.handlers:
+            if isinstance(h, logging.StreamHandler):
+                formatter = '%(levelname)s file="%(filename)s" line=%(lineno)d stanza="{0}" %(message)s'.format(name)
+                h.setFormatter(logging.Formatter(formatter))
+
+    except Exception:
+        logging.exception("Couldn't update logging templates")
+
+
+# prints XML stream
+def print_xml_multi_instance_mode(server, event, stanza):
+    print "<stream><event stanza=""%s""><data>%s</data><host>%s</host></event></stream>" % (
+        stanza, encode_xml_text(event), server)
+
+
+# prints simple stream
+def print_simple(s):
+    print "%s\n" % s
+
+
+# HELPER FUNCTIONS
+
+# prints XML stream
+def print_xml_stream(s):
+    print "<stream><event unbroken=\"1\"><data>%s</data><done/></event></stream>" % encode_xml_text(s)
