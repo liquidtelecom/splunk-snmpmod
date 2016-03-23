@@ -1,5 +1,8 @@
 # Release Notes
 
+## v2.5.2
+* Significant improvements to logging
+
 ## v2.5.1
 * [Issue #3](https://github.com/oxo42/snmpmod/issues/3): Fixed statistics coming through
 
