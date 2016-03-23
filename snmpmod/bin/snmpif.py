@@ -175,7 +175,7 @@ def do_run():
     snmpif.read_config()
     snmputils.set_logger_format(name=snmpif.name())
 
-    cmd_gen, _ = snmputils.get_cmd_gen([])
+    cmd_gen = snmputils.get_cmd_gen()
 
     try:
         while True:

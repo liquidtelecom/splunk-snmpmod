@@ -85,7 +85,7 @@ class SnmpStanza:
         if self.ipv6():
             transport = cmdgen.Udp6TransportTarget((self.destination(), self.port()))
         else:
-            transport = cmdgen.UdpTransportTarget((self.destination(), self.port()), timeout=2)
+            transport = cmdgen.UdpTransportTarget((self.destination(), self.port()), timeout=5)
         return transport
 
     def security_object(self):

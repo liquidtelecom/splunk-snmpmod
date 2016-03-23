@@ -182,7 +182,7 @@ def do_run():
     runner.read_config()
     snmputils.set_logger_format(name=runner.name())
 
-    cmd_gen, _ = snmputils.get_cmd_gen([])
+    cmd_gen = snmputils.get_cmd_gen()
 
     while True:
         try:

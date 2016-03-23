@@ -23,8 +23,6 @@ def load_eggs():
 
 load_eggs()
 from pysnmp.entity.rfc3413.oneliner import cmdgen
-from pysnmp.smi import builder
-from pysnmp.smi import view
 # noinspection PyUnresolvedReferences
 from pysnmp.proto.rfc1905 import NoSuchInstance
 import logging
@@ -32,9 +30,9 @@ import logging
 logging_format_string = '%(levelname)s file="%(filename)s" line=%(lineno)d %(message)s'
 
 
-def get_cmd_gen(mib_names_args):
+def get_cmd_gen():
     cmd_gen = cmdgen.CommandGenerator()
-    return cmd_gen, 'a'
+    return cmd_gen
 
 
 class SnmpException(Exception):
@@ -59,7 +57,7 @@ def walk_oids(cmd_gen, security_object, transport, oids):
     error_indication, error_status, error_index, var_binds_table = snmp_result
 
     if error_indication:
-        logging.error('error=snmp_engine messsage="%s"', error_indication)
+        logging.error('error=snmp_engine msg=%s first_oid=%s', splunk_escape(error_indication), splunk_escape(oids[0]))
         raise SnmpException('SNMP Engine Error: %s' % error_indication)
     elif error_status:
         logging.error('%s at %s' % (error_status.prettyPrint(),
@@ -87,7 +85,7 @@ def query_oids(cmd_gen, security_object, transport, oids):
     error_indication, error_status, error_index, var_binds_table = snmp_result
 
     if error_indication:
-        logging.error('error=snmp_engine messsage="%s"', error_indication)
+        logging.error('error=snmp_engine msg=%s first_oid=%s', splunk_escape(error_indication), splunk_escape(oids[0]))
         raise SnmpException('SNMP Engine Error: %s' % error_indication)
     elif error_status:
         logging.error('%s at %s' % (error_status.prettyPrint(),
@@ -176,7 +174,10 @@ def print_validation_error(s):
     print "<error><message>%s</message></error>" % encode_xml_text(s)
 
 
-def splunk_escape(input_string):
+def splunk_escape(data):
+    input_string = str(data)
+    if input_string is None or input_string == '':
+        return ""
     s = string.replace(input_string, "'", "")
     if any(c in string.whitespace for c in s):
         return "\"%s\"" % s

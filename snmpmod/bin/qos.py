@@ -79,7 +79,7 @@ class Qos(SnmpStanza):
 
     def __init__(self):
         SnmpStanza.__init__(self)
-        self.cmd_gen, _ = snmputils.get_cmd_gen([])
+        self.cmd_gen = snmputils.get_cmd_gen()
 
     def interfaces(self):
         interfaces_str = self.conf.get("interfaces", None)
