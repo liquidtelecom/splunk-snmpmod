@@ -190,7 +190,8 @@ def do_run():
                 oid_args = [str(b + '.' + operation) for b in symbols]
                 var_binds = snmputils.query_oids(cmd_gen, runner.security_object(), runner.transport(), oid_args)
                 handle_output(var_binds, runner.destination(), operation)
-
+        except snmputils.SnmpException:
+            pass
         except Exception:  # catch *all* exceptions
             logging.exception("Exception with getCmd to %s:%s" % (runner.destination(), runner.port))
 

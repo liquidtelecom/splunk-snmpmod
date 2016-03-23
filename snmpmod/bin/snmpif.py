@@ -186,6 +186,8 @@ def do_run():
                     logging.debug('var_binds=%s', var_binds)
                     handle_output(var_binds, snmpif.destination())
 
+            except SnmpException:
+                pass
             except Exception:
                 logging.exception('msg="Exception in main loop"')
 
