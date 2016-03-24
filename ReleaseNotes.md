@@ -1,5 +1,8 @@
 # Release Notes
 
+## v2.5.3
+* Fixes and tweaks to logging
+
 ## v2.5.2
 * Significant improvements to logging
 
