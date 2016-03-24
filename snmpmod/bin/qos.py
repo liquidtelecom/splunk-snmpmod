@@ -8,6 +8,7 @@ from datetime import datetime
 
 import snmputils
 from SnmpStanza import *
+from pysnmp.error import PySnmpError
 from snmputils import walk_oids, query_oids, NoSuchInstance, SnmpException
 
 CmStat = namedtuple('CmStat', ['object_index', 'policy_index', 'statistic', 'class_map', 'value'])
@@ -15,16 +16,20 @@ Classmap = namedtuple('Classmap', ['index', 'name'])
 PolicyIndex = namedtuple('PolicyIndex', ['interface', 'dir'])
 ClassMapKey = namedtuple('CmKey', ['interface', 'direction', 'class_map'])
 StatValue = namedtuple('StatValue', ['statistic', 'value'])
+CmStatTable = namedtuple('CmStatTable', ['stat', 'pol_ind', 'obj_ind', 'val'])
 
 
-def extract_classmaps_from(res):
+class HandledSnmpException(Exception):
+    pass
+
+
+def extract_classmaps(res):
     """
     Extract class maps from the SNMP walk result and format them as a dictionary
     """
 
     if len(res) < 1:
-        logging.warn('function=extract_classmaps_from msg="No classmap names found"')
-        raise SnmpException('get_classmap_names')
+        raise SnmpException('No classmap names found', 'extract_classmaps')
 
     class_maps = {}
     for r in res:
@@ -42,8 +47,7 @@ def extract_policy_interface_indexes(policy_indexes_table):
     # This impliest that the table is a list of list of ObjectType
 
     if len(policy_indexes_table) < 1:
-        logging.warn('function=extract_policy_interface_indexes msg="No policy interface indexes found"')
-        raise SnmpException('get_policy_interface_indexes')
+        raise SnmpException('No policy indexes found', 'extract_policy_interface_indexes')
 
     policy_indexes = {}
     for [(name, index)] in policy_indexes_table:
@@ -58,12 +62,10 @@ def extract_policy_interface_indexes(policy_indexes_table):
 
 
 def extract_classmap_stats(cm_stats_table):
-    logging.debug("cm_stats_table=%s" % cm_stats_table)
     cm_stats = []
     flat_result = [r for sublist in cm_stats_table for r in sublist]
-    for [name, _] in flat_result:
-        cm_stats.append((str(name[-2]), str(name[-1])))
-    logging.debug("cm_stats=" + str(cm_stats))
+    for [name, val] in flat_result:
+        cm_stats.append(CmStatTable(str(name[-3]), str(name[-2]), str(name[-1]), str(val.prettyPrint())))
     return cm_stats
 
 
@@ -239,39 +241,65 @@ class Qos(SnmpStanza):
             '836311858': ('324', 'out')
         }
         """
-        oids = [str('1.3.6.1.4.1.9.9.166.1.2.1.1.1.' + i) for i in self.interfaces()]
-        table = walk_oids(self.cmd_gen, runner.security_object(), runner.transport(), oids)
-        # output looks like
-        # iso.3.6.1.4.1.9.9.166.1.2.1.1.1.324.1 = Gauge32: 836311857 <- policy index
-        # iso.3.6.1.4.1.9.9.166.1.2.1.1.1.324.2 = Gauge32: 836311858
-        return extract_policy_interface_indexes(table)
+        try:
+            oids = [str('1.3.6.1.4.1.9.9.166.1.2.1.1.1.' + i) for i in self.interfaces()]
+            table = walk_oids(self.cmd_gen, runner.security_object(), runner.transport(), oids)
+            # output looks like
+            # iso.3.6.1.4.1.9.9.166.1.2.1.1.1.324.1 = Gauge32: 836311857 <- policy index
+            # iso.3.6.1.4.1.9.9.166.1.2.1.1.1.324.2 = Gauge32: 836311858
+            return extract_policy_interface_indexes(table)
+        except SnmpException as ex:
+            logging.error('error=%s msg=%s interfaces=%s', splunk_escape(ex.error_type),
+                          splunk_escape(ex.msg), splunk_escape(','.join(self.interfaces())))
+            raise HandledSnmpException
 
-    def get_config_indexes(self, indexes):
+    def get_config_indexes(self, cm_stats):
         """
         Get the config indexes for all policy & object indexes.
 
         indexes is a list of tuples of (policy_index, object_index)
-        :param indexes: [(policy_index, object_index)]
+        :param cm_stats: ClassMap Statistics
         :return:
         {
             ('policy_index', 'object_index'): 'config_index'
         }
         """
-        oids = [str('1.3.6.1.4.1.9.9.166.1.5.1.1.2.' + policy_index + '.' + object_index) for policy_index, object_index
-                in indexes]
-        res = query_oids(self.cmd_gen, runner.security_object(), runner.transport(), oids)
-        logging.debug("config_index_oids=" + str(res))
-        # output looks like
-        # iso.3.6.1.4.1.9.9.166.1.5.1.1.2.836311857.601391474 = Gauge32: 1965376995
+        try:
+            oids = [str('1.3.6.1.4.1.9.9.166.1.5.1.1.2.' + cs.pol_ind + '.' + cs.obj_ind) for cs in cm_stats]
+            res = query_oids(self.cmd_gen, runner.security_object(), runner.transport(), oids)
+            logging.debug("config_index_oids=" + str(res))
+            # output looks like
+            # iso.3.6.1.4.1.9.9.166.1.5.1.1.2.836311857.601391474 = Gauge32: 1965376995
 
-        config_indexes = {}
-        for name, val in res:
-            if not isinstance(val, NoSuchInstance):
-                policy_index = str(name[-2])
-                object_index = str(name[-1])
-                value = str(val.prettyPrint())
-                config_indexes[(policy_index, object_index)] = value
-        return config_indexes
+            config_indexes = {}
+            for name, val in res:
+                if not isinstance(val, NoSuchInstance):
+                    policy_index = str(name[-2])
+                    object_index = str(name[-1])
+                    value = str(val.prettyPrint())
+                    config_indexes[(policy_index, object_index)] = value
+            return config_indexes
+        except SnmpException as ex:
+            logging.error('error=%s msg=%s method=get_config_indexes', splunk_escape(ex.error_type),
+                          splunk_escape(ex.msg))
+            raise HandledSnmpException
+
+    def get_cm_stats_table(self, policy_indexes):
+        stats_and_indexes = [str(stat + '.' + index) for stat in self.stats_keys() for index in policy_indexes.keys()]
+        try:
+            cm_stats_oids = ['1.3.6.1.4.1.9.9.166.1.15.1.1.' + si for si in stats_and_indexes]
+
+            cm_stats_table = walk_oids(self.cmd_gen, runner.security_object(), runner.transport(), cm_stats_oids)
+            logging.debug('cm_stats_table=%s', cm_stats_table)
+            # output looks like
+            # iso.3.6.1.4.1.9.9.166.1.15.1.1.7.836311857.601391474 = Gauge32: 59392
+            #                      statistic ^.policy  ^.objInd ^^ =          ^^^ statistic value
+            cm_stats = extract_classmap_stats(cm_stats_table)
+            return cm_stats
+        except SnmpException as ex:
+            logging.error('error=%s msg=%s stats_indexes=%s', splunk_escape(ex.error_type),
+                          splunk_escape(ex.msg), splunk_escape(str(stats_and_indexes)))
+            raise HandledSnmpException
 
     def get_cm_stats(self, policy_indexes, class_maps):
         """
@@ -280,29 +308,21 @@ class Qos(SnmpStanza):
         :param class_maps: Class maps
         """
 
-        cm_stats_oids = ['1.3.6.1.4.1.9.9.166.1.15.1.1.' + str(stat + '.' + index) for stat in self.stats_keys() for
-                         index in policy_indexes.keys()]
-
-        cm_stats_table = walk_oids(self.cmd_gen, runner.security_object(), runner.transport(), cm_stats_oids)
-        # output looks like
-        # iso.3.6.1.4.1.9.9.166.1.15.1.1.7.836311857.601391474 = Gauge32: 59392
-        #                      statistic ^.policy  ^.objInd ^^ =          ^^^ statistic value
-        cm_stats = extract_classmap_stats(cm_stats_table)
+        cm_stats = self.get_cm_stats_table(policy_indexes)
+        logging.debug('cm_stats=%s', cm_stats)
         config_indexes = self.get_config_indexes(cm_stats)
         logging.debug("config_indexes=" + str(config_indexes))
 
         stats_results = []
-        for (name, val) in cm_stats_table[0]:
-            statistic = self.statistics[str(name[-3])]
-            policy_index = str(name[-2])
-            object_index = str(name[-1])
-            value = str(val.prettyPrint())
-            config_index = config_indexes[(policy_index, object_index)]
+        # for (name, val) in cm_stats_table[0]:
+        for cs in cm_stats:
+            stat_name = self.statistics[cs.stat]
+            config_index = config_indexes[(cs.pol_ind, cs.obj_ind)]
             class_map = class_maps[config_index]
 
-            pi = policy_indexes[policy_index]
+            pi = policy_indexes[cs.pol_ind]
             key = ClassMapKey(pi.interface, pi.dir, class_map)
-            val = StatValue(statistic, value)
+            val = StatValue(stat_name, cs.val)
             stats_results.append((key, val))
 
         return stats_results
@@ -335,10 +355,14 @@ class Qos(SnmpStanza):
             sys.stdout.flush()
 
             metrics_len = sum([len(metric) for dimension, metric in events.iteritems()])
-            logging.info('action=completed dimensions=%s total_metrics=%s', len(events), metrics_len)
-        except SnmpException:
-            # Raised for snmp issues.  Logged previously.  Will retry
+            logging.debug('action=completed dimensions=%s total_metrics=%s', len(events), metrics_len)
+        except SnmpException as ex:
+            logging.error('error=%s msg=%s method=run_once', splunk_escape(ex.error_type),
+                          splunk_escape(ex.msg))
+        except HandledSnmpException:
             pass
+        except PySnmpError as ex:
+            logging.error('msg=%s', splunk_escape(ex.message))
         except Exception:
             logging.exception('method=run_once')
 
@@ -354,11 +378,16 @@ class Qos(SnmpStanza):
             '1965376995': 'class-default',
         }
         """
-        classmap_names = walk_oids(self.cmd_gen, runner.security_object(), runner.transport(),
-                                   ['1.3.6.1.4.1.9.9.166.1.7.1.1.1'])
-        # iso.3.6.1.4.1.9.9.166.1.7.1.1.1.1819748200 = STRING: "ef"
-        # iso.3.6.1.4.1.9.9.166.1.7.1.1.1.1965376995 = STRING: "class-default"
-        return extract_classmaps_from(classmap_names)
+        try:
+            classmap_names = walk_oids(self.cmd_gen, runner.security_object(), runner.transport(),
+                                       ['1.3.6.1.4.1.9.9.166.1.7.1.1.1'])
+            # iso.3.6.1.4.1.9.9.166.1.7.1.1.1.1819748200 = STRING: "ef"
+            # iso.3.6.1.4.1.9.9.166.1.7.1.1.1.1965376995 = STRING: "class-default"
+            return extract_classmaps(classmap_names)
+        except SnmpException as ex:
+            logging.error('error=%s msg=%s method=classmap_names', splunk_escape(ex.error_type),
+                          splunk_escape(ex.msg))
+            raise HandledSnmpException
 
 
 runner = Qos()

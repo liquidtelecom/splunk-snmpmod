@@ -24,13 +24,13 @@ class QosFunctionTests(unittest.TestCase):
                  [(ObjectName('1.3.6.1.4.1.9.9.166.1.7.1.1.1.1201419590'), OctetString('af2'))],
                  [(ObjectName('1.3.6.1.4.1.9.9.166.1.7.1.1.1.1819748200'), OctetString('ef'))],
                  [(ObjectName('1.3.6.1.4.1.9.9.166.1.7.1.1.1.1965376995'), OctetString('class-default'))]]
-        class_maps = qos.extract_classmaps_from(table)
+        class_maps = qos.extract_classmaps(table)
         expected = {'748129779': 'cs6', '1201419589': 'af1', '1201419584': 'af4', '1201419590': 'af2',
                     '1965376995': 'class-default', '1819748200': 'ef'}
         assert_that(class_maps, has_entries(expected))
 
     def test_extract_classmaps_empty(self):
-        self.assertRaises(SnmpException, qos.extract_classmaps_from, [])
+        self.assertRaises(SnmpException, qos.extract_classmaps, [])
 
     @staticmethod
     def test_extract_policy_indexes():

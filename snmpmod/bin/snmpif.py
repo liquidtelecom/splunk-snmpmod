@@ -5,6 +5,7 @@ SNMP Interface Modular Input
 import time
 
 import snmputils
+from pysnmp.error import PySnmpError
 from snmputils import SnmpException
 from SnmpStanza import *
 
@@ -177,30 +178,32 @@ def do_run():
 
     cmd_gen = snmputils.get_cmd_gen()
 
-    try:
-        while True:
-            try:
-                for interface in snmpif.interfaces():
-                    oid_args = [str(b + '.' + interface) for b in interface_mibs.keys()]
-                    var_binds = snmputils.query_oids(cmd_gen, snmpif.security_object(), snmpif.transport(), oid_args)
-                    logging.debug('var_binds=%s', var_binds)
-                    handle_output(var_binds, snmpif.destination())
+    while True:
+        try:
+            for interface in snmpif.interfaces():
+                oid_args = [str(b + '.' + interface) for b in interface_mibs.keys()]
+                var_binds = snmputils.query_oids(cmd_gen, snmpif.security_object(), snmpif.transport(), oid_args)
+                logging.debug('var_binds=%s', var_binds)
+                handle_output(var_binds, snmpif.destination())
 
-            except SnmpException:
-                pass
-            except Exception:
-                logging.exception('msg="Exception in main loop"')
+        except SnmpException as ex:
+            logging.error('error=%s msg=%s interfaces=%s', splunk_escape(ex.error_type),
+                          splunk_escape(ex.msg), splunk_escape(','.join(snmpif.interfaces())))
+        except PySnmpError as ex:
+            logging.error('msg=%s', splunk_escape(ex.message))
+        except Exception:
+            logging.exception('msg="Exception in main loop"')
 
-            time.sleep(float(snmpif.snmpinterval()))
-
-    except Exception as ex:
-        logging.exception("Exception in run: %s" % ex)
-        sys.exit(1)
+        time.sleep(float(snmpif.snmpinterval()))
 
 
 def get_symbol(mib):
     base_mib = str(mib[0:-1])
     return interface_mibs[base_mib]
+
+
+def get_interface(mib):
+    return str(mib[-1])
 
 
 def create_snmpif_splunk_event(response_object):
@@ -211,14 +214,20 @@ def create_snmpif_splunk_event(response_object):
     nvpairs = [(get_symbol(name), snmputils.splunk_escape(val.prettyPrint()))
                for (name, val) in response_object
                if not isinstance(val, NoSuchInstance)]
-    splunkevent += ' '.join(['%s=%s' % nvp for nvp in nvpairs])
-
-    return splunkevent
+    logging.debug('nvpairs=%s', nvpairs)
+    if len(nvpairs) > 0:
+        splunkevent += ' '.join(['%s=%s' % nvp for nvp in nvpairs])
+        return splunkevent
+    else:
+        mib, _ = response_object[0]
+        logging.error('msg="No data for interface" interface=%s', get_interface(mib))
+        return None
 
 
 def handle_output(response_object, destination):
     splunkevent = create_snmpif_splunk_event(response_object)
-    snmputils.print_xml_single_instance_mode(destination, splunkevent)
+    if splunkevent is not None:
+        snmputils.print_xml_single_instance_mode(destination, splunkevent)
     sys.stdout.flush()
 
 

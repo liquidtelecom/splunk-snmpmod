@@ -36,11 +36,9 @@ def get_cmd_gen():
 
 
 class SnmpException(Exception):
-    def __init__(self, value):
-        self.value = value
-
-    def __str__(self):
-        return repr(self.value)
+    def __init__(self, msg, error_type):
+        self.error_type = error_type
+        self.msg = msg
 
 
 def walk_oids(cmd_gen, security_object, transport, oids):
@@ -57,14 +55,11 @@ def walk_oids(cmd_gen, security_object, transport, oids):
     error_indication, error_status, error_index, var_binds_table = snmp_result
 
     if error_indication:
-        logging.error('error=snmp_engine msg=%s first_oid=%s', splunk_escape(error_indication), splunk_escape(oids[0]))
-        raise SnmpException('SNMP Engine Error: %s' % error_indication)
+        raise SnmpException(error_indication, 'snmp_engine')
     elif error_status:
-        logging.error('%s at %s' % (error_status.prettyPrint(),
-                                    error_index and var_binds_table[int(error_index) - 1][0] or '?'
-                                    )
-                      )
-        raise SnmpException("SNMP PDU-level Error: %s" % error_indication)
+        msg = '%s at %s' % (error_status.prettyPrint(),
+                            error_index and var_binds_table[int(error_index) - 1][0] or '?')
+        raise SnmpException(msg, 'pdu')
 
     return var_binds_table
 
@@ -85,14 +80,12 @@ def query_oids(cmd_gen, security_object, transport, oids):
     error_indication, error_status, error_index, var_binds_table = snmp_result
 
     if error_indication:
-        logging.error('error=snmp_engine msg=%s first_oid=%s', splunk_escape(error_indication), splunk_escape(oids[0]))
-        raise SnmpException('SNMP Engine Error: %s' % error_indication)
+        logging.debug('error_indication=%s error_status=%s error_index=%s', error_indication, error_status, error_index)
+        raise SnmpException(error_indication, 'snmp_engine')
     elif error_status:
-        logging.error('%s at %s' % (error_status.prettyPrint(),
-                                    error_index and var_binds_table[int(error_index) - 1][0] or '?'
-                                    )
-                      )
-        raise SnmpException("SNMP PDU-level Error: %s" % error_indication)
+        msg = '%s at %s' % (error_status.prettyPrint(),
+                            error_index and var_binds_table[int(error_index) - 1][0] or '?')
+        raise SnmpException(msg, 'pdu')
 
     return var_binds_table
 

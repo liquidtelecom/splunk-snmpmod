@@ -31,7 +31,7 @@ snmpwalk -v 3 -u ecouser -A deepf1neleg 46.17.232.130  IF-MIB::ifDescr
 
 snmpwalk -v 3 -u ecouser -A deepf1neleg 46.17.232.131 IF-MIB::ifDescr
 
-splunk cmd splunkd print-modinput-config snmpif snmpif://LRW-PE2-KGL | splunk cmd python $SPLUNK_HOME/etc/apps/snmpmod/bin/snmpif.py
+splunk cmd splunkd print-modinput-config snmpif snmpif://test | splunk cmd python $SPLUNK_HOME/etc/apps/snmpmod/bin/snmpif.py
 ```
 
 
@@ -39,7 +39,11 @@ IPSLA Statistics
 ================
 
 ```shell
-./updateDevSplunk.ps1 ; splunk cmd splunkd print-modinput-config ipsla ipsla://tst | splunk cmd python $env:SPLUNK_HOME/etc/apps/snmpmod/bin/ipsla.py --validate-arguments
+./updateDevSplunk.ps1 ; splunk cmd sp1lunkd print-modinput-config ipsla ipsla://tst | splunk cmd python $SPLUNK_HOME/etc/apps/snmpmod/bin/ipsla.py --validate-arguments
+
+# Linux
+
+./update.sh && splunk cmd splunkd print-modinput-config ipsla ipsla://test | splunk cmd python $SPLUNK_HOME/etc/apps/snmpmod/bin/ipsla.py
 ```
 
 

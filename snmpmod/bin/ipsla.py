@@ -7,11 +7,12 @@ import logging
 from datetime import datetime
 
 import snmputils
+from pysnmp.error import PySnmpError
 from pysnmp.proto.rfc1905 import NoSuchInstance
 import sys
 
 from SnmpStanza import SnmpStanza
-from snmputils import splunk_escape, print_validation_error, print_xml_single_instance_mode
+from snmputils import splunk_escape, print_validation_error, print_xml_single_instance_mode, SnmpException
 
 
 class Ipsla(SnmpStanza):
@@ -166,14 +167,6 @@ symbols = {
     '1.3.6.1.4.1.9.9.42.1.3.5.1.37': 'jitterStatsPacketLossMIA',
 }
 
-
-def get_mib_symbol(name):
-    if name in symbols:
-        return symbols[name]
-    else:
-        return 'unknown'
-
-
 runner = Ipsla()
 
 
@@ -187,26 +180,41 @@ def do_run():
     while True:
         try:
             for operation in runner.operations():
-                oid_args = [str(b + '.' + operation) for b in symbols]
-                var_binds = snmputils.query_oids(cmd_gen, runner.security_object(), runner.transport(), oid_args)
-                handle_output(var_binds, runner.destination(), operation)
-        except snmputils.SnmpException:
-            pass
-        except Exception:  # catch *all* exceptions
+                try:
+                    oid_args = [str(b + '.' + operation) for b in symbols]
+                    var_binds = snmputils.query_oids(cmd_gen, runner.security_object(), runner.transport(), oid_args)
+                    handle_output(var_binds, runner.destination(), operation)
+                except SnmpException as ex:
+                    logging.error('error=%s msg=%s operation=%s', splunk_escape(ex.error_type),
+                                  splunk_escape(ex.msg), operation)
+                    break
+        except PySnmpError as ex:
+            logging.error('msg=%s', splunk_escape(ex.message))
+        except Exception:
             logging.exception("Exception with getCmd to %s:%s" % (runner.destination(), runner.port))
 
         time.sleep(float(runner.snmpinterval()))
 
 
+def get_symbol(mib):
+    base_mib = str(mib[0:-1])
+    if base_mib in symbols:
+        return symbols[base_mib]
+    else:
+        return 'unknown'
+
+
 def handle_output(response_object, destination, operation):
     splunkevent = "%s operation=%s " % (datetime.isoformat(datetime.utcnow()), operation)
-    for name, val in response_object:
-        # getOid() gives you an ObjectIdentifier from pyasn.  I am stripping the last item off the list and turning
-        # it into a string for the dictionary.
-        symbol = get_mib_symbol(str(name.getOid()[0:-1]))
-        if not isinstance(val, NoSuchInstance):
-            splunkevent += '%s=%s ' % (symbol, splunk_escape(val.prettyPrint()))
-    print_xml_single_instance_mode(destination, splunkevent)
+
+    nvpairs = [(get_symbol(name), splunk_escape(val.prettyPrint()))
+               for (name, val) in response_object
+               if not isinstance(val, NoSuchInstance)]
+    if len(nvpairs) > 0:
+        splunkevent += ' '.join(['%s=%s' % nvp for nvp in nvpairs])
+        print_xml_single_instance_mode(destination, splunkevent)
+    else:
+        logging.error('msg="No data for operation" operation=%s', operation)
     sys.stdout.flush()
 
 
