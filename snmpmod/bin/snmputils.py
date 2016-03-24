@@ -179,7 +179,15 @@ def splunk_escape(data):
     if input_string is None or input_string == '':
         return ""
     s = string.replace(input_string, "'", "")
-    if any(c in string.whitespace for c in s):
+
+    def should_escape():
+        import re
+        if re.search(r"\W+", s):
+            return True
+        else:
+            return False
+
+    if should_escape():
         return "\"%s\"" % s
     else:
         return s
