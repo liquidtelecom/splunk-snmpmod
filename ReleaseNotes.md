@@ -1,5 +1,8 @@
 # Release Notes
 
+## v2.5.4
+* More changes to error handling
+
 ## v2.5.3
 * Fixes and tweaks to logging
 
