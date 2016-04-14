@@ -6,9 +6,10 @@ import time
 from collections import namedtuple
 from datetime import datetime
 
+from pysnmp.error import PySnmpError
+
 import snmputils
 from SnmpStanza import *
-from pysnmp.error import PySnmpError
 from snmputils import walk_oids, query_oids, NoSuchInstance, SnmpException
 
 CmStat = namedtuple('CmStat', ['object_index', 'policy_index', 'statistic', 'class_map', 'value'])
@@ -65,7 +66,10 @@ def extract_classmap_stats(cm_stats_table):
     cm_stats = []
     flat_result = [r for sublist in cm_stats_table for r in sublist]
     for [name, val] in flat_result:
-        cm_stats.append(CmStatTable(str(name[-3]), str(name[-2]), str(name[-1]), str(val.prettyPrint())))
+        cm_stats.append(CmStatTable(stat=str(name[-3]),
+                                    pol_ind=str(name[-2]),
+                                    obj_ind=str(name[-1]),
+                                    val=str(val.prettyPrint())))
     return cm_stats
 
 

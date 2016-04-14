@@ -1,5 +1,5 @@
-import string
 import os
+import string
 import sys
 
 splunk_home = os.environ.get("SPLUNK_HOME")
@@ -146,8 +146,11 @@ def get_security_object(conf):
         v3_auth_protocol = get_v3_auth_protocol(v3_auth_protocol_str)
         v3_priv_protocol = get_v3_priv_protocol(v3_priv_protocol_str)
 
-        security_object = cmdgen.UsmUserData(v3_security_name, authKey=v3_auth_key, privKey=v3_priv_key,
-                                             authProtocol=v3_auth_protocol, privProtocol=v3_priv_protocol)
+        security_object = cmdgen.UsmUserData(v3_security_name,
+                                             authKey=v3_auth_key,
+                                             privKey=v3_priv_key,
+                                             authProtocol=v3_auth_protocol,
+                                             privProtocol=v3_priv_protocol)
     else:
         communitystring = conf.get("communitystring", "public")
         mp_model_val = 1
