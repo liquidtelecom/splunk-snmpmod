@@ -18,6 +18,7 @@ PolicyIndex = namedtuple('PolicyIndex', ['interface', 'dir'])
 ClassMapKey = namedtuple('CmKey', ['interface', 'direction', 'class_map'])
 StatValue = namedtuple('StatValue', ['statistic', 'value'])
 CmStatTable = namedtuple('CmStatTable', ['stat', 'pol_ind', 'obj_ind', 'val'])
+PoliceStatTable = namedtuple('PoliceStatTable', ['stat', 'pol_ind', 'val'])
 
 
 class HandledSnmpException(Exception):
@@ -71,6 +72,15 @@ def extract_classmap_stats(cm_stats_table):
                                     obj_ind=str(name[-1]),
                                     val=str(val.prettyPrint())))
     return cm_stats
+
+
+def add_stats_to_events_dict(stats, events):
+    new_events = events.copy()
+    for dimension, metric in stats:
+        if dimension not in new_events:
+            new_events[dimension] = []
+        new_events[dimension].append(metric)
+    return new_events
 
 
 class Qos(SnmpStanza):
@@ -325,11 +335,35 @@ class Qos(SnmpStanza):
             class_map = class_maps[config_index]
 
             pi = policy_indexes[cs.pol_ind]
-            key = ClassMapKey(pi.interface, pi.dir, class_map)
+            key = ClassMapKey(interface=pi.interface, direction=pi.dir, class_map=class_map)
             val = StatValue(stat_name, cs.val)
             stats_results.append((key, val))
 
         return stats_results
+
+    def get_police_stats(self, policy_interface_indexes):
+        police_stats = {'7': 'policeConformedBitRate'}
+        stats_and_indexes = [str(stat + '.' + index) for stat in police_stats for index in
+                             policy_interface_indexes.keys()]
+        try:
+            oids = ['1.3.6.1.4.1.9.9.166.1.17.1.1.' + si for si in stats_and_indexes]
+            police_stats_table = walk_oids(self.cmd_gen, runner.security_object(), runner.transport(), oids)
+            logging.debug('police_stats_table=%s' % police_stats_table)
+            police_results = []
+            for [name, val] in police_stats_table[0]:
+                stat = str(name[-3])
+                policy_index = str(name[-2])
+                pi = policy_interface_indexes[policy_index]
+                stat_name = police_stats[stat]
+                stat_value = str(val.prettyPrint())
+
+                key = ClassMapKey(interface=pi.interface, direction=pi.dir, class_map=None)
+                v = StatValue(stat_name, stat_value)
+                police_results.append((key, v))
+            return police_results
+        except SnmpException as ex:
+            logging.error('error=%s msg=%s stats_indexes=%s', splunk_escape(ex.error_type),
+                          splunk_escape(ex.msg), splunk_escape(str(stats_and_indexes)))
 
     # noinspection PyBroadException
     def run_once(self):
@@ -340,19 +374,19 @@ class Qos(SnmpStanza):
             logging.debug('policy_interface_indexes="%s"', policy_interface_indexes)
             cm_stats = self.get_cm_stats(policy_interface_indexes, class_map_names)
             logging.debug('cm_stats="%s"', cm_stats)
+            police_stats = self.get_police_stats(policy_interface_indexes)
+            logging.debug('police_stats=%s', police_stats)
 
-            events = {}
-            for dimension, metric in cm_stats:
-                if dimension not in events:
-                    events[dimension] = []
-                events[dimension].append(metric)
+            events = add_stats_to_events_dict(cm_stats, {})
+            events = add_stats_to_events_dict(police_stats, events)
 
             logging.debug("events=" + str(events))
 
             for (interface, direction, class_map), metrics in events.iteritems():
-                splunkevent = "%s interface=%s direction=%s class_map=%s" % (datetime.isoformat(datetime.utcnow()),
-                                                                             interface, direction,
-                                                                             snmputils.splunk_escape(class_map))
+                splunkevent = '%s interface=%s direction=%s' % (
+                    datetime.isoformat(datetime.utcnow()), interface, direction)
+                if class_map is not None:
+                    splunkevent += ' class_map=%s' % splunk_escape(class_map)
                 for statistic, value in metrics:
                     splunkevent += ' %s=%s' % (statistic, value)
                 snmputils.print_xml_single_instance_mode(self.destination(), splunkevent)
