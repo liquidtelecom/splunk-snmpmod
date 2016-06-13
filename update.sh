@@ -1,5 +1,5 @@
 #!/bin/bash
 
-./build.sh 
+sh ./build.sh
 
 splunk install app target/snmpmod.spl -update 1 -auth admin:changeme
