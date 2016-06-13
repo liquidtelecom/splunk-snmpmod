@@ -51,8 +51,10 @@ def extract_policy_interface_indexes(policy_indexes_table):
     if len(policy_indexes_table) < 1:
         raise SnmpException('No policy indexes found', 'extract_policy_interface_indexes')
 
+    pit = policy_indexes_table[0]
+
     policy_indexes = {}
-    for [(name, index)] in policy_indexes_table:
+    for (name, index) in pit:
         if not isinstance(index, NoSuchInstance):
             # For direction, 1 is in, 2 is out
             direction = 'in' if name[-1] == 1 else 'out'
