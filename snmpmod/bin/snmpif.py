@@ -142,6 +142,7 @@ snmpif = SnmpIf()
 
 # These are all the OIDs for an interface from IF-MIB::
 # http://tools.cisco.com/Support/SNMP/do/BrowseOID.do?objectInput=1.3.6.1.2.1.2.2.1.1
+# http://www.oidview.com/mibs/0/IF-MIB.html
 interface_mibs = {'1.3.6.1.2.1.2.2.1.1': 'ifIndex',
                   '1.3.6.1.2.1.2.2.1.2': 'ifDescr',
                   '1.3.6.1.2.1.2.2.1.3': 'ifType',
@@ -182,6 +183,7 @@ def do_run():
         try:
             for interface in snmpif.interfaces():
                 oid_args = [str(b + '.' + interface) for b in interface_mibs.keys()]
+                logging.debug('oid_args=%s', oid_args)
                 var_binds = snmputils.query_oids(cmd_gen, snmpif.security_object(), snmpif.transport(), oid_args)
                 logging.debug('var_binds=%s', var_binds)
                 handle_output(var_binds, snmpif.destination())
