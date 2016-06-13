@@ -6,9 +6,9 @@ import time
 from collections import namedtuple
 from datetime import datetime
 
-from pysnmp.error import PySnmpError
-
 import snmputils
+
+from pysnmp.error import PySnmpError
 from SnmpStanza import *
 from snmputils import walk_oids, query_oids, NoSuchInstance, SnmpException
 
@@ -258,6 +258,7 @@ class Qos(SnmpStanza):
         try:
             oids = [str('1.3.6.1.4.1.9.9.166.1.2.1.1.1.' + i) for i in self.interfaces()]
             table = walk_oids(self.cmd_gen, runner.security_object(), runner.transport(), oids)
+            logging.debug('policy_interface_indexes=%s', table)
             # output looks like
             # iso.3.6.1.4.1.9.9.166.1.2.1.1.1.324.1 = Gauge32: 836311857 <- policy index
             # iso.3.6.1.4.1.9.9.166.1.2.1.1.1.324.2 = Gauge32: 836311858
