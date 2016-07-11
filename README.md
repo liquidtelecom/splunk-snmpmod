@@ -2,6 +2,13 @@
 
 [Release Notes](ReleaseNotes.md)
 
+# Prerequisites
+Python 2.7.0
+Microsoft Visual C++ Compiler for Python 2.7
+pip install pysnmp
+pip2 install pycrypto
+Splunk 6.3.x
+
 # Deployment
 
 ```shell
@@ -69,6 +76,20 @@ snmpinterval = 60
 index = index
 sourcetype = cbqos
 ```
+
+# snmpEkinops Stanza
+
+```ini
+[snmpEkinops://hostname]
+destination = hostname
+snmp_version = 2C
+communitystring = private
+snmpinterval = 2
+interfaces = 6,20
+index = index
+sourcetype = snmpEkinops
+```
+
 
 # Response Handlers
 

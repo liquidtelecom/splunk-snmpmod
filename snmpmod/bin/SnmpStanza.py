@@ -69,7 +69,7 @@ class SnmpStanza:
         return self.conf.get("destination")
 
     def snmpinterval(self):
-        return self.conf.get("snmpinterfal", 60)
+        return self.conf.get("snmpinterval", 60)
 
     def name(self):
         return self.conf.get("name")

@@ -1,5 +1,9 @@
 # Release Notes
 
+## v2.6.1
+* Added 'snmpEquinox' to query Equinox switches cards
+* Fixed bug with [snmpinterval] parameter.
+
 ## v2.5.4
 * More changes to error handling
 
