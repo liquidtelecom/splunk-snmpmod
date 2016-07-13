@@ -90,6 +90,29 @@ def query_oids(cmd_gen, security_object, transport, oids):
     return var_binds_table
 
 
+def query_ekinops_card(cmd_gen, security_object, transport, oids):
+    """
+    Takes a oid and runs it against the target returning the results or throwing an exception
+    :param cmd_gen: SNMP cmd_gen
+    :param security_object: SNMP security object
+    :param transport: SNMP transport
+    :param oids oids to poll
+    """
+
+    snmp_result = cmd_gen.getCmd(security_object, transport, *oids)
+    error_indication, error_status, error_index, var_binds_table = snmp_result
+
+    if error_indication:
+        logging.debug('error_indication=%s error_status=%s error_index=%s', error_indication, error_status, error_index)
+        raise SnmpException(error_indication, 'snmp_engine')
+    elif error_status:
+        msg = '%s at %s' % (error_status.prettyPrint(),
+                            error_index and var_binds_table[int(error_index) - 1][0] or '?')
+        raise SnmpException(msg, 'pdu')
+
+    return var_binds_table
+
+
 def get_v3_auth_protocol(v3_auth_protocol_str):
     return {
         'usmHMACMD5AuthProtocol': cmdgen.usmHMACMD5AuthProtocol,

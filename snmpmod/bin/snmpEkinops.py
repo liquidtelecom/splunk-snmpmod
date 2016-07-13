@@ -143,11 +143,28 @@ snmpEkinops = SnmpEkinops()
 # These are all the OIDs for an interface from IF-MIB::
 # http://tools.cisco.com/Support/SNMP/do/BrowseOID.do?objectInput=1.3.6.1.2.1.2.2.1.1
 # http://www.oidview.com/mibs/0/IF-MIB.html
-interface_mibs = {'1.3.6.1.4.1.20044.36.3.2.35.0': 'pmoailMesrclientEdfaGainMeas',
+interface_mibs = {  'pm1001lhMesrlineRxPowerMeas':'1.3.6.1.4.1.20044.10.3.3.212',
+                    'pm1001lhMesrlineTxPowerMeas':'1.3.6.1.4.1.20044.10.3.3.211',
+                    'pmoabMesrclientEdfaRxpwrMeas':'1.3.6.1.4.1.20044.23.3.2.34',
+                    'pmoabMesrlineEdfaTxpwrMeas':'1.3.6.1.4.1.20044.23.3.3.41',
+                    'pmoabMesrlineEdfaGainMeas':'1.3.6.1.4.1.20044.23.3.3.43',
+                    'pmopsMesrcomaTxPower1':'1.3.6.1.4.1.20044.30.3.2.16',
+                    'pmopsMesrcomaTxPower2':'1.3.6.1.4.1.20044.30.3.2.17',
+                    'pmopsMesrcomaRxPower1':'1.3.6.1.4.1.20044.30.3.2.18',
+                    'pmopsMesrcomaRxPower2':'1.3.6.1.4.1.20044.30.3.2.19',
+                    'pmoailMesrclientEdfaGainMeas':'1.3.6.1.4.1.20044.36.3.2.35',
                   }
 
-mgnt_mib = "1.3.6.1.4.1.20044.7.1.2.7.0"    # 'mgnt2GigmSelectedBoard'
+inv_interface_mibs = {v: k for k, v in interface_mibs.items()}
 
+managed_oids = {    'PMC1001HC':['pm1001lhMesrlineRxPowerMeas','pm1001lhMesrlineTxPowerMeas'],
+                    'PMOABP-E':['pmoabMesrclientEdfaRxpwrMeas','pmoabMesrlineEdfaTxpwrMeas','pmoabMesrlineEdfaGainMeas'],
+                    'PMOPS':['pmopsMesrcomaTxPower1','pmopsMesrcomaTxPower2','pmopsMesrcomaRxPower1','pmopsMesrcomaRxPower2'],
+                    'PMOAIL-E':['pmoailMesrclientEdfaGainMeas']
+               }
+
+mgnt2GigmSelectedBoard = "1.3.6.1.4.1.20044.7.1.2.7.0"
+mgnt2Position = "1.3.6.1.4.1.20044.7.1.2.1.1.2"
 
 # noinspection PyBroadException
 def do_run():
@@ -159,14 +176,27 @@ def do_run():
     while True:
         try:
             for interface in snmpEkinops.interfaces():
-                oid_args = [str(mgnt_mib), rfc1902.Integer(interface)]  # Set interface to read from with setCmd
-                logging.debug('setCmd, oid_args=%s', oid_args)
+                interfaceId = interface.split(':')[0]
+                cardType = interface.split(':')[1]
+
+                # Get the card number
+                oid_args = [mgnt2Position + "." + interfaceId]
+                logging.debug('get card number, oid_args=%s', oid_args)
+                var_binds = snmputils.query_ekinops_card(cmd_gen, snmpEkinops.security_object(), snmpEkinops.transport(),oid_args)
+                card_number = var_binds[0][1].prettyPrint()
+
+                # Set card to read from
+                oid_args = [str(mgnt2GigmSelectedBoard), rfc1902.Integer(card_number)]
+                logging.debug('set card number, oid_args=%s', oid_args)
                 snmp_result = cmd_gen.setCmd(snmpEkinops.security_object(), snmpEkinops.transport(), oid_args)
-                oid_args = [str(b) for b in interface_mibs.keys()]
+
+                # Create array of oids to read
+                oid_args = [interface_mibs[e] + ".0" for e in managed_oids[cardType]]
                 logging.debug('queryOids, oid_args=%s', oid_args)
                 var_binds = snmputils.query_oids(cmd_gen, snmpEkinops.security_object(), snmpEkinops.transport(), oid_args)
                 logging.debug('var_binds=%s', var_binds)
-                handle_output(var_binds, snmpEkinops.destination(), interface)
+
+                handle_output(var_binds, snmpEkinops.destination(), card_number)
 
         except SnmpException as ex:
             logging.error('error=%s msg=%s interfaces=%s', splunk_escape(ex.error_type),
@@ -180,15 +210,15 @@ def do_run():
 
 
 def get_symbol(mib):
-    base_mib = str(mib)
-    return interface_mibs[base_mib]
+    base_mib = str(mib[0:-1])
+    return inv_interface_mibs[base_mib]
 
 
 def get_interface(mib):
     return str(mib[-1])
 
 
-def create_snmpEkinops_splunk_event(response_object, card):
+def create_snmpEkinops_splunk_event(response_object, card_number):
     from datetime import datetime
     from pysnmp.proto.rfc1905 import NoSuchInstance
     splunkevent = "%s " % (datetime.isoformat(datetime.utcnow()))
@@ -199,7 +229,7 @@ def create_snmpEkinops_splunk_event(response_object, card):
     logging.debug('nvpairs=%s', nvpairs)
     if len(nvpairs) > 0:
         splunkevent += ' '.join(['%s=%s' % nvp for nvp in nvpairs])
-        splunkevent += ' card=' + card
+        splunkevent += ' card=' + card_number
         return splunkevent
     else:
         mib, _ = response_object[0]
@@ -207,8 +237,8 @@ def create_snmpEkinops_splunk_event(response_object, card):
         return None
 
 
-def handle_output(response_object, destination, card):
-    splunkevent = create_snmpEkinops_splunk_event(response_object, card)
+def handle_output(response_object, destination, card_number):
+    splunkevent = create_snmpEkinops_splunk_event(response_object, card_number)
     if splunkevent is not None:
         snmputils.print_xml_single_instance_mode(destination, splunkevent)
     sys.stdout.flush()
