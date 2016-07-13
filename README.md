@@ -3,10 +3,8 @@
 [Release Notes](ReleaseNotes.md)
 
 # Prerequisites
-Python 2.7.0
-Microsoft Visual C++ Compiler for Python 2.7
-pip install pysnmp
-pip2 install pycrypto
+Python 2.7.0,
+Microsoft Visual C++ Compiler for Python 2.7,
 Splunk 6.3.x
 
 # Deployment
@@ -85,7 +83,7 @@ destination = hostname
 snmp_version = 2C
 communitystring = private
 snmpinterval = 2
-interfaces = 6,20
+interfaces = 3:PMOAIL-E,11:PMOAIL-E
 index = index
 sourcetype = snmpEkinops
 ```
