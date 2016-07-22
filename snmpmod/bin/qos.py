@@ -51,15 +51,15 @@ def extract_policy_interface_indexes(policy_indexes_table):
     if len(policy_indexes_table) < 1:
         raise SnmpException('No policy indexes found', 'extract_policy_interface_indexes')
 
-    pit = policy_indexes_table[0]
-
     policy_indexes = {}
-    for (name, index) in pit:
-        if not isinstance(index, NoSuchInstance):
+    for policy_obj in policy_indexes_table:
+        name = policy_obj[0]
+        value = policy_obj[1]
+        if not isinstance(value, NoSuchInstance):
             # For direction, 1 is in, 2 is out
             direction = 'in' if name[-1] == 1 else 'out'
             interface = str(name[-2])
-            policy_index = index.prettyPrint()
+            policy_index = value.prettyPrint()
             policy_indexes[policy_index] = PolicyIndex(interface, direction)
 
     return policy_indexes
@@ -258,8 +258,8 @@ class Qos(SnmpStanza):
         }
         """
         try:
-            oids = [str('1.3.6.1.4.1.9.9.166.1.2.1.1.1.' + i) for i in self.interfaces()]
-            table = walk_oids(self.cmd_gen, runner.security_object(), runner.transport(), oids)
+            oids = [str('1.3.6.1.4.1.9.9.166.1.2.1.1.1.' + i + '.' + direction) for i in self.interfaces() for direction in ['1', '2']]
+            table = query_oids(self.cmd_gen, runner.security_object(), runner.transport(), oids)
             logging.debug('policy_interface_indexes=%s', table)
             # output looks like
             # iso.3.6.1.4.1.9.9.166.1.2.1.1.1.324.1 = Gauge32: 836311857 <- policy index
@@ -353,16 +353,17 @@ class Qos(SnmpStanza):
             police_stats_table = walk_oids(self.cmd_gen, runner.security_object(), runner.transport(), oids)
             logging.debug('police_stats_table=%s' % police_stats_table)
             police_results = []
-            for [name, val] in police_stats_table[0]:
-                stat = str(name[-3])
-                policy_index = str(name[-2])
-                pi = policy_interface_indexes[policy_index]
-                stat_name = police_stats[stat]
-                stat_value = str(val.prettyPrint())
+            if police_stats_table:
+                for [name, val] in police_stats_table[0]:
+                    stat = str(name[-3])
+                    policy_index = str(name[-2])
+                    pi = policy_interface_indexes[policy_index]
+                    stat_name = police_stats[stat]
+                    stat_value = str(val.prettyPrint())
 
-                key = ClassMapKey(interface=pi.interface, direction=pi.dir, class_map=None)
-                v = StatValue(stat_name, stat_value)
-                police_results.append((key, v))
+                    key = ClassMapKey(interface=pi.interface, direction=pi.dir, class_map=None)
+                    v = StatValue(stat_name, stat_value)
+                    police_results.append((key, v))
             return police_results
         except SnmpException as ex:
             logging.error('error=%s msg=%s stats_indexes=%s', splunk_escape(ex.error_type),
@@ -381,7 +382,8 @@ class Qos(SnmpStanza):
             logging.debug('police_stats=%s', police_stats)
 
             events = add_stats_to_events_dict(cm_stats, {})
-            events = add_stats_to_events_dict(police_stats, events)
+            if police_stats:
+                events = add_stats_to_events_dict(police_stats, events)
 
             logging.debug("events=" + str(events))
 

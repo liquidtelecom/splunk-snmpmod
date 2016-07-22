@@ -50,18 +50,25 @@ def walk_oids(cmd_gen, security_object, transport, oids):
     :param oids oids to poll
     :returns Tuple of (e_indication, e_status, e_index, res)
     """
+    # nextCmd do not work properly with list of oids -return leaaves out of oid node.
+    # Besides nextCmd doesn't work with large lists.
+    # We split the list in single oid nodes
+    results = []
+    for oid in oids:
+        oid = [oid]
+        snmp_result = cmd_gen.nextCmd(security_object, transport, *oid)
+        error_indication, error_status, error_index, var_binds_table = snmp_result
 
-    snmp_result = cmd_gen.nextCmd(security_object, transport, *oids)
-    error_indication, error_status, error_index, var_binds_table = snmp_result
+        if error_indication:
+            raise SnmpException(error_indication, 'snmp_engine')
+        elif error_status:
+            msg = '%s at %s' % (error_status.prettyPrint(),
+                                error_index and var_binds_table[int(error_index) - 1][0] or '?')
+            raise SnmpException(msg, 'pdu')
 
-    if error_indication:
-        raise SnmpException(error_indication, 'snmp_engine')
-    elif error_status:
-        msg = '%s at %s' % (error_status.prettyPrint(),
-                            error_index and var_binds_table[int(error_index) - 1][0] or '?')
-        raise SnmpException(msg, 'pdu')
+        results = results + var_binds_table
 
-    return var_binds_table
+    return results
 
 
 def query_oids(cmd_gen, security_object, transport, oids):
@@ -76,18 +83,25 @@ def query_oids(cmd_gen, security_object, transport, oids):
     # there's a single value under .4.5.1.0 it will report on that
     # I probably don't want to do a walk most of the time.  This shit is confusing :(
 
-    snmp_result = cmd_gen.getCmd(security_object, transport, *oids)
-    error_indication, error_status, error_index, var_binds_table = snmp_result
+    # getCmd doesn't work with large lists.
+    # We split the list in single oid nodes.
+    results = []
+    for oid in oids:
+        oid = [oid]
+        snmp_result = cmd_gen.getCmd(security_object, transport, *oid)
+        error_indication, error_status, error_index, var_binds_table = snmp_result
 
-    if error_indication:
-        logging.debug('error_indication=%s error_status=%s error_index=%s', error_indication, error_status, error_index)
-        raise SnmpException(error_indication, 'snmp_engine')
-    elif error_status:
-        msg = '%s at %s' % (error_status.prettyPrint(),
-                            error_index and var_binds_table[int(error_index) - 1][0] or '?')
-        raise SnmpException(msg, 'pdu')
+        if error_indication:
+            logging.debug('error_indication=%s error_status=%s error_index=%s', error_indication, error_status, error_index)
+            raise SnmpException(error_indication, 'snmp_engine')
+        elif error_status:
+            msg = '%s at %s' % (error_status.prettyPrint(),
+                                error_index and var_binds_table[int(error_index) - 1][0] or '?')
+            raise SnmpException(msg, 'pdu')
 
-    return var_binds_table
+        results = results + var_binds_table
+
+    return results
 
 
 def query_ekinops_card(cmd_gen, security_object, transport, oids):

@@ -1,5 +1,10 @@
 # Release Notes
 
+## v2.6.2
+* [Issue #5](https://github.com/liquidtelecom/splunk-snmpmod/issues/5): Fixed non existing cbQosPoliceConformedBitRate oid triggering exception.
+* getCmd doesn't work properly with large oids lists -more than 10 elements, so I splitted the list in single ones.
+* nextCmd doesn't work properly with oids lists -return leaves out of node, so I splitted the list in single ones.
+
 ## v2.6.1
 * Added 'snmpEquinox' to query Equinox switches cards
 * Fixed bug with [snmpinterval] parameter.
