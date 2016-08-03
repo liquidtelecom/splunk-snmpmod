@@ -353,17 +353,19 @@ class Qos(SnmpStanza):
             police_stats_table = walk_oids(self.cmd_gen, runner.security_object(), runner.transport(), oids)
             logging.debug('police_stats_table=%s' % police_stats_table)
             police_results = []
-            if police_stats_table:
-                for [name, val] in police_stats_table[0]:
-                    stat = str(name[-3])
-                    policy_index = str(name[-2])
-                    pi = policy_interface_indexes[policy_index]
-                    stat_name = police_stats[stat]
-                    stat_value = str(val.prettyPrint())
 
-                    key = ClassMapKey(interface=pi.interface, direction=pi.dir, class_map=None)
-                    v = StatValue(stat_name, stat_value)
-                    police_results.append((key, v))
+            if police_stats_table:
+                for police_stat in police_stats_table:
+                    for [name, val] in police_stat:
+                        stat = str(name[-3])
+                        policy_index = str(name[-2])
+                        pi = policy_interface_indexes[policy_index]
+                        stat_name = police_stats[stat]
+                        stat_value = str(val.prettyPrint())
+
+                        key = ClassMapKey(interface=pi.interface, direction=pi.dir, class_map=None)
+                        v = StatValue(stat_name, stat_value)
+                        police_results.append((key, v))
             return police_results
         except SnmpException as ex:
             logging.error('error=%s msg=%s stats_indexes=%s', splunk_escape(ex.error_type),
