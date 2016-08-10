@@ -3,7 +3,7 @@ SNMP Interface Modular Input for Ekinops switches
 """
 
 import time
-
+import socket
 import snmputils
 from pysnmp.error import PySnmpError
 from snmputils import SnmpException
@@ -178,6 +178,7 @@ def do_run():
             for interface in snmpEkinops.interfaces():
                 interfaceId = interface.split(':')[0]
                 cardType = interface.split(':')[1]
+                ipAddr = socket.gethostbyname(snmpEkinops.destination())
 
                 # Get the card number
                 oid_args = [mgnt2Position + "." + interfaceId]
@@ -196,7 +197,13 @@ def do_run():
                 var_binds = snmputils.query_oids(cmd_gen, snmpEkinops.security_object(), snmpEkinops.transport(), oid_args)
                 logging.debug('var_binds=%s', var_binds)
 
-                handle_output(var_binds, snmpEkinops.destination(), card_number)
+                interface_attrs = {}
+                interface_attrs['card'] = card_number
+                interface_attrs['interfaceIdx'] = interfaceId
+                interface_attrs['cardType'] = cardType
+                interface_attrs['ipAddr'] = ipAddr
+
+                handle_output(var_binds, snmpEkinops.destination(), card_number, interface_attrs)
 
         except SnmpException as ex:
             logging.error('error=%s msg=%s interfaces=%s', splunk_escape(ex.error_type),
@@ -218,7 +225,7 @@ def get_interface(mib):
     return str(mib[-1])
 
 
-def create_snmpEkinops_splunk_event(response_object, card_number):
+def create_snmpEkinops_splunk_event(response_object, card_number, interface_attrs):
     from datetime import datetime
     from pysnmp.proto.rfc1905 import NoSuchInstance
     splunkevent = "%s " % (datetime.isoformat(datetime.utcnow()))
@@ -229,7 +236,8 @@ def create_snmpEkinops_splunk_event(response_object, card_number):
     logging.debug('nvpairs=%s', nvpairs)
     if len(nvpairs) > 0:
         splunkevent += ' '.join(['%s=%s' % nvp for nvp in nvpairs])
-        splunkevent += ' card=' + card_number
+        for key, value in interface_attrs.iteritems():
+            splunkevent += ' ' + key + '=' + value
         return splunkevent
     else:
         mib, _ = response_object[0]
@@ -237,8 +245,8 @@ def create_snmpEkinops_splunk_event(response_object, card_number):
         return None
 
 
-def handle_output(response_object, destination, card_number):
-    splunkevent = create_snmpEkinops_splunk_event(response_object, card_number)
+def handle_output(response_object, destination, card_number, interface_attrs):
+    splunkevent = create_snmpEkinops_splunk_event(response_object, card_number, interface_attrs)
     if splunkevent is not None:
         snmputils.print_xml_single_instance_mode(destination, splunkevent)
     sys.stdout.flush()
