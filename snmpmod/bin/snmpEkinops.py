@@ -203,7 +203,7 @@ def do_run():
                 interface_attrs['cardType'] = cardType
                 interface_attrs['ipAddr'] = ipAddr
 
-                handle_output(var_binds, snmpEkinops.destination(), card_number, interface_attrs)
+                handle_output(var_binds, snmpEkinops.destination(), interface_attrs)
 
         except SnmpException as ex:
             logging.error('error=%s msg=%s interfaces=%s', splunk_escape(ex.error_type),
@@ -225,7 +225,7 @@ def get_interface(mib):
     return str(mib[-1])
 
 
-def create_snmpEkinops_splunk_event(response_object, card_number, interface_attrs):
+def create_snmpEkinops_splunk_event(response_object, interface_attrs):
     from datetime import datetime
     from pysnmp.proto.rfc1905 import NoSuchInstance
     splunkevent = "%s " % (datetime.isoformat(datetime.utcnow()))
@@ -245,8 +245,8 @@ def create_snmpEkinops_splunk_event(response_object, card_number, interface_attr
         return None
 
 
-def handle_output(response_object, destination, card_number, interface_attrs):
-    splunkevent = create_snmpEkinops_splunk_event(response_object, card_number, interface_attrs)
+def handle_output(response_object, destination, interface_attrs):
+    splunkevent = create_snmpEkinops_splunk_event(response_object, interface_attrs)
     if splunkevent is not None:
         snmputils.print_xml_single_instance_mode(destination, splunkevent)
     sys.stdout.flush()
