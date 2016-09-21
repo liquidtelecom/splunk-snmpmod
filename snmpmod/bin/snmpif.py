@@ -181,12 +181,16 @@ def do_run():
 
     while True:
         try:
+            startTime = time.time()
+            endTime = 0
             for interface in snmpif.interfaces():
                 oid_args = [str(b + '.' + interface) for b in interface_mibs.keys()]
                 logging.debug('oid_args=%s', oid_args)
                 var_binds = snmputils.query_oids(cmd_gen, snmpif.security_object(), snmpif.transport(), oid_args)
                 logging.debug('var_binds=%s', var_binds)
                 handle_output(var_binds, snmpif.destination())
+
+            endTime = time.time()
 
         except SnmpException as ex:
             logging.error('error=%s msg=%s interfaces=%s', splunk_escape(ex.error_type),
@@ -196,7 +200,10 @@ def do_run():
         except Exception:
             logging.exception('msg="Exception in main loop"')
 
-        time.sleep(float(snmpif.snmpinterval()))
+        interval = int(snmpif.snmpinterval())
+        runningTime = endTime - startTime
+        if (runningTime > 0 ) and (runningTime < interval):
+            time.sleep(interval-runningTime)
 
 
 def get_symbol(mib):

@@ -84,10 +84,11 @@ def query_oids(cmd_gen, security_object, transport, oids):
     # I probably don't want to do a walk most of the time.  This shit is confusing :(
 
     # getCmd doesn't work with large lists.
-    # We split the list in single oid nodes.
+    # We split the list in chunks of 10 oids.
+    chunkSize = 30
+    chunks = [oids[x:x + chunkSize] for x in range(0, len(oids), chunkSize)]
     results = []
-    for oid in oids:
-        oid = [oid]
+    for oid in chunks:
         snmp_result = cmd_gen.getCmd(security_object, transport, *oid)
         error_indication, error_status, error_index, var_binds_table = snmp_result
 
