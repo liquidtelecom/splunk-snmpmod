@@ -153,14 +153,15 @@ interface_mibs = {  'pm1001lhMesrlineRxPowerMeas':'1.3.6.1.4.1.20044.10.3.3.212'
                     'pmopsMesrcomaRxPower1':'1.3.6.1.4.1.20044.30.3.2.18',
                     'pmopsMesrcomaRxPower2':'1.3.6.1.4.1.20044.30.3.2.19',
                     'pmoailMesrclientEdfaGainMeas':'1.3.6.1.4.1.20044.36.3.2.35',
+                    'pm1001lhCfgLabelclientPortn':'1.3.6.1.4.1.20044.10.10.3.1.1.3',
                   }
 
 inv_interface_mibs = {v: k for k, v in interface_mibs.items()}
 
-managed_oids = {    'PMC1001HC':['pm1001lhMesrlineRxPowerMeas','pm1001lhMesrlineTxPowerMeas'],
-                    'PMOABP-E':['pmoabMesrclientEdfaRxpwrMeas','pmoabMesrlineEdfaTxpwrMeas','pmoabMesrlineEdfaGainMeas'],
-                    'PMOPS':['pmopsMesrcomaTxPower1','pmopsMesrcomaTxPower2','pmopsMesrcomaRxPower1','pmopsMesrcomaRxPower2'],
-                    'PMOAIL-E':['pmoailMesrclientEdfaGainMeas']
+managed_oids = {    'PMC1001HC':['pm1001lhMesrlineRxPowerMeas','pm1001lhMesrlineTxPowerMeas','pm1001lhCfgLabelclientPortn'],
+                    'PMOABP-E':['pmoabMesrclientEdfaRxpwrMeas','pmoabMesrlineEdfaTxpwrMeas','pmoabMesrlineEdfaGainMeas','pm1001lhCfgLabelclientPortn'],
+                    'PMOPS':['pmopsMesrcomaTxPower1','pmopsMesrcomaTxPower2','pmopsMesrcomaRxPower1','pmopsMesrcomaRxPower2','pm1001lhCfgLabelclientPortn'],
+                    'PMOAIL-E':['pmoailMesrclientEdfaGainMeas','pm1001lhCfgLabelclientPortn']
                }
 
 mgnt2GigmSelectedBoard = "1.3.6.1.4.1.20044.7.1.2.7.0"
