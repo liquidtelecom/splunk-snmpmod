@@ -3,7 +3,7 @@ SNMP Interface Modular Input
 """
 
 import time
-
+import re
 import snmputils
 from pysnmp.error import PySnmpError
 from snmputils import SnmpException
@@ -171,6 +171,7 @@ interface_mibs = {'1.3.6.1.2.1.2.2.1.1': 'ifIndex',
                   '1.3.6.1.2.1.31.1.1.1.11': 'ifHCOutUcastPkts',
                   }
 
+ifAlias = "1.3.6.1.2.1.31.1.1.1.18"
 
 # noinspection PyBroadException
 def do_run():
@@ -183,7 +184,16 @@ def do_run():
         try:
             startTime = time.time()
             endTime = 0
-            for interface in snmpif.interfaces():
+            interfaces = snmpif.interfaces()
+
+            if not snmpif.aliasSearchRegex()=='':
+                newInterfaces = get_MatchingIndexes(cmd_gen, snmpif.aliasSearchRegex())
+                for newInterface in newInterfaces:
+                    if not str(newInterface) in interfaces:
+                        create_splunk_event('aliasSearchRegexMatched ifIndex=' + str(newInterface), snmpif.destination())
+                        interfaces.append(str(newInterface))
+
+            for interface in interfaces:
                 oid_args = [str(b + '.' + interface) for b in interface_mibs.keys()]
                 logging.debug('oid_args=%s', oid_args)
                 var_binds = snmputils.query_oids(cmd_gen, snmpif.security_object(), snmpif.transport(), oid_args)
@@ -197,8 +207,8 @@ def do_run():
                           splunk_escape(ex.msg), splunk_escape(','.join(snmpif.interfaces())))
         except PySnmpError as ex:
             logging.error('msg=%s', splunk_escape(ex.message))
-        except Exception:
-            logging.exception('msg="Exception in main loop"')
+        except Exception as ex:
+            logging.exception('Exception="%s"', ex.message)
 
         interval = int(snmpif.snmpinterval())
         runningTime = endTime - startTime
@@ -210,10 +220,27 @@ def get_symbol(mib):
     base_mib = str(mib[0:-1])
     return interface_mibs[base_mib]
 
+def get_MatchingIndexes(cmd_gen, regex):
+    newInterfaces = []
+    var_binds = snmputils.bulk_oids(cmd_gen, snmpif.security_object(), snmpif.transport(), [ifAlias])
+    for result in var_binds:
+        if isinstance(result, list) and len(result) == 1:
+            match = re.search(regex,result[0][1]._value)
+            if match:
+                newInterfaces.append(result[0][0].getOid()._value[-1])
+
+    return newInterfaces
 
 def get_interface(mib):
     return str(mib[-1])
 
+
+def create_splunk_event(eventStr, destination):
+    from datetime import datetime
+    splunkevent = "%s " % (datetime.isoformat(datetime.utcnow())) + eventStr
+    if splunkevent is not None:
+        snmputils.print_xml_single_instance_mode(destination, splunkevent)
+    sys.stdout.flush()
 
 def create_snmpif_splunk_event(response_object):
     from datetime import datetime

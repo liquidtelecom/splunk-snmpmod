@@ -70,6 +70,31 @@ def walk_oids(cmd_gen, security_object, transport, oids):
 
     return results
 
+def bulk_oids(cmd_gen, security_object, transport, oids):
+    """
+    Takes a list of oids, runs them against the configured target returning the result table or throws and exception
+    :param cmd_gen: SNMP cmd_gen
+    :param security_object: SNMP security object
+    :param transport: SNMP transport
+    :param oids oids to poll
+    :returns Tuple of (e_indication, e_status, e_index, res)
+    """
+    results = []
+    for oid in oids:
+        oid = [oid]
+        snmp_result = cmd_gen.bulkCmd(security_object, transport, 0, 1,*oid)
+        error_indication, error_status, error_index, var_binds_table = snmp_result
+
+        if error_indication:
+            raise SnmpException(error_indication, 'snmp_engine')
+        elif error_status:
+            msg = '%s at %s' % (error_status.prettyPrint(),
+                                error_index and var_binds_table[int(error_index) - 1][0] or '?')
+            raise SnmpException(msg, 'pdu')
+
+        results = results + var_binds_table
+
+    return results
 
 def query_oids(cmd_gen, security_object, transport, oids):
     """
