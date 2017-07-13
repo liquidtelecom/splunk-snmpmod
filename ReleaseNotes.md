@@ -1,9 +1,5 @@
 # Release Notes
 
-## v2.7.1
-* Added aliasSearchRegex parameter to add interfaces that match a provided regex.
-* A event with tag 'aliasSearchRegexMatched' will be created for all new added interfaces that match.
-
 ## v2.6.2
 * [Issue #5](https://github.com/liquidtelecom/splunk-snmpmod/issues/5): Fixed non existing cbQosPoliceConformedBitRate oid triggering exception.
 * getCmd doesn't work properly with large oids lists -more than 10 elements, so I splitted the list in single ones.

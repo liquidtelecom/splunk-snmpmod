@@ -74,9 +74,6 @@ class SnmpStanza:
     def name(self):
         return self.conf.get("name")
 
-    def aliasSearchRegex(self):
-        return self.conf.get("aliasSearchRegex", "")
-
     def ipv6(self):
         return int(self.conf.get("ipv6", 0))
 
@@ -88,7 +85,7 @@ class SnmpStanza:
         if self.ipv6():
             transport = cmdgen.Udp6TransportTarget((self.destination(), self.port()))
         else:
-            transport = cmdgen.UdpTransportTarget((self.destination(), self.port()), timeout=5, retries=1)
+            transport = cmdgen.UdpTransportTarget((self.destination(), self.port()), timeout=5)
         return transport
 
     def security_object(self):
