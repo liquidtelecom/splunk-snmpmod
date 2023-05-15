@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import os
 import string
 import sys
@@ -205,14 +207,14 @@ def print_validation_error(s):
     :param s:
     :return:
     """
-    print "<error><message>%s</message></error>" % encode_xml_text(s)
+    print("<error><message>%s</message></error>" % encode_xml_text(s))
 
 
 def splunk_escape(data):
     input_string = str(data)
     if input_string is None or input_string == '':
         return ""
-    s = string.replace(input_string, "'", "")
+    s = input_string.replace("'", "")
 
     def should_escape():
         import re
@@ -229,8 +231,9 @@ def splunk_escape(data):
 
 # prints XML stream
 def print_xml_single_instance_mode(server, event):
-    print "<stream><event><data>%s</data><host>%s</host></event></stream>" % (
+    print("<stream><event><data>%s</data><host>%s</host></event></stream>" % (
         encode_xml_text(event), server)
+    )
 
 
 def encode_xml_text(text):
@@ -258,17 +261,18 @@ def set_logger_format(name):
 
 # prints XML stream
 def print_xml_multi_instance_mode(server, event, stanza):
-    print "<stream><event stanza=""%s""><data>%s</data><host>%s</host></event></stream>" % (
+    print("<stream><event stanza=""%s""><data>%s</data><host>%s</host></event></stream>" % (
         stanza, encode_xml_text(event), server)
+    )
 
 
 # prints simple stream
 def print_simple(s):
-    print "%s\n" % s
+    print("%s\n" % s)
 
 
 # HELPER FUNCTIONS
 
 # prints XML stream
 def print_xml_stream(s):
-    print "<stream><event unbroken=\"1\"><data>%s</data><done/></event></stream>" % encode_xml_text(s)
+    print("<stream><event unbroken=\"1\"><data>%s</data><done/></event></stream>" % encode_xml_text(s))

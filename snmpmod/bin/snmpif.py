@@ -1,6 +1,7 @@
 """
 SNMP Interface Modular Input
 """
+from __future__ import print_function
 
 import time
 
@@ -253,11 +254,11 @@ def do_validate():
 
 
 def do_scheme():
-    print snmpif.scheme()
+    print(snmpif.scheme())
 
 
 def usage():
-    print "usage: %s [--scheme|--validate-arguments]"
+    print("usage: %s [--scheme|--validate-arguments]")
     logging.error("Incorrect Program Usage")
     sys.exit(2)
 

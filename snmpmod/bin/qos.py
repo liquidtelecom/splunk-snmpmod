@@ -1,6 +1,7 @@
 """
 SNMP IPSLA Statistics Modular Input
 """
+from __future__ import print_function
 
 import time
 from collections import namedtuple
@@ -466,11 +467,11 @@ def do_validate():
 
 
 def do_scheme():
-    print runner.scheme()
+    print(runner.scheme())
 
 
 def usage():
-    print "usage: %s [--scheme|--validate-arguments]"
+    print("usage: %s [--scheme|--validate-arguments]")
     logging.error("Incorrect Program Usage")
     sys.exit(2)
 

@@ -1,6 +1,7 @@
 """
 SNMP Interface Modular Input for Ekinops switches
 """
+from __future__ import print_function
 
 import time
 import socket
@@ -30,7 +31,7 @@ class SnmpEkinops(SnmpStanza):
 
     def scheme(self):
         return """<scheme>
-    <title>SNMP Interface</title>
+    <title>SNMP Interface (Ekinops)</title>
     <description>SNMP input to poll interfaces</description>
     <use_external_validation>true</use_external_validation>
     <streaming_mode>xml</streaming_mode>
@@ -266,11 +267,11 @@ def do_validate():
 
 
 def do_scheme():
-    print snmpEkinops.scheme()
+    print(snmpEkinops.scheme())
 
 
 def usage():
-    print "usage: %s [--scheme|--validate-arguments]"
+    print("usage: %s [--scheme|--validate-arguments]")
     logging.error("Incorrect Program Usage")
     sys.exit(2)
 
